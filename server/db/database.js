@@ -1,11 +1,11 @@
 const mysql = require('mysql2/promise');
 
 const DB_CONFIG = {
-  host: 'reuniao.eduall.io',
-  port: 3306,
-  user: 'u101094084_reuniao',
-  password: '6HpX|B8d;',
-  database: 'u101094084_reuniao',
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'u101094084_reuniao',
+  password: process.env.DB_PASSWORD || '6HpX|B8d;',
+  database: process.env.DB_NAME || 'u101094084_reuniao',
   waitForConnections: true,
   connectionLimit: 10,
   charset: 'utf8mb4',
