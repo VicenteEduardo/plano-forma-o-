@@ -1,10 +1,10 @@
 {
   "name": "equipa-mais",
   "version": "1.0.0",
-  "description": "Eduall sowftare - Gestão de Técnicos e Agenda",
-  "main": "server/index.js",
+  "description": "Eduall Software - Gestão de Técnicos e Agenda",
+  "main": "index.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "node index.js",
     "dev": "node --watch server/index.js",
     "seed": "node server/db/seed.js"
   },
