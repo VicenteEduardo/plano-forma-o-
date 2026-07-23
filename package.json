@@ -1,0 +1,17 @@
+{
+  "name": "equipa-mais",
+  "version": "1.0.0",
+  "description": "Eduall sowftare - Gestão de Técnicos e Agenda",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/db/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.23.1"
+  }
+}
