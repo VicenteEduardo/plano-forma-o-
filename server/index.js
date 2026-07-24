@@ -52,13 +52,15 @@ app.use((err, req, res, next) => {
 });
 
 async function start() {
-  await initSchema();
   app.listen(PORT, () => {
     console.log(`Eduall Software server running at http://localhost:${PORT}`);
   });
+  try {
+    await initSchema();
+    console.log('Database schema initialized');
+  } catch (err) {
+    console.error('Database init failed (server still running):', err.message);
+  }
 }
 
-start().catch(err => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+start();

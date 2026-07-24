@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 
 const DB_CONFIG = {
-  host: 'reuniao.eduall.io',
+  host: 'localhost',
   port: 3306,
   user: 'u101094084_reuniao',
   password: '6HpX|B8d;',
