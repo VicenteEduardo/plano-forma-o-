@@ -58,12 +58,15 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { nome, codigo } = req.body;
+    const { nome, codigo, email, telefone, nif, diretor, morada } = req.body;
     if (!nome || !codigo) return res.status(400).json({ error: 'nome e codigo são obrigatórios' });
     const db = await getDb();
     try {
-      const [info] = await db.execute('INSERT INTO escolas (nome, codigo) VALUES (?, ?)', [nome, codigo]);
-      res.json({ id: info.insertId, nome, codigo });
+      const [info] = await db.execute(
+        'INSERT INTO escolas (nome, codigo) VALUES (?, ?)',
+        [nome, codigo]
+      );
+      res.json({ id: info.insertId, nome, codigo, email: email||'', telefone: telefone||'', nif: nif||'', diretor: diretor||'', morada: morada||'', estado: 'Ativo', logo: '', tipo: 0 });
     } finally { db.release(); }
   } catch (err) { next(err); }
 });

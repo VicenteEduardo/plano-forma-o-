@@ -576,6 +576,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </div>
           </div>
         </div>
+        <div class="d-flex justify-content-end mb-2">
+          <button class="btn btn-sm btn-outline-danger" onclick="pdfDashboard()"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</button>
+        </div>
 
         <div class="row g-3 mb-4">
           <div class="col-12">
@@ -680,6 +683,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                     <option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option>
                   </select>
                   <button class="btn btn-danger btn-sm" onclick="openOcorrenciaModal()"><i class="bi bi-plus-lg me-1"></i>Nova ocorrência</button>
+                  <button class="btn btn-outline-danger btn-sm" onclick="pdfOcorrencias()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
                 </div>
               </div>
               <div id="listaOcorrencias"></div>
@@ -703,6 +707,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           <select class="form-select" id="techFilterEquipa">
             <option value="todos">Todas as equipas</option>
           </select>
+          <button class="btn btn-outline-danger btn-sm" onclick="pdfTecnicos()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
           <span class="ms-auto chip chip-muted" id="techCount">0 técnicos</span>
         </div>
         <div id="listaTecnicos"></div>
@@ -785,6 +790,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           </select>
           <button class="btn btn-soft btn-sm avail-trigger-btn" onclick="openAvailabilityModal()"><i class="bi bi-search me-1"></i>Verificar disponibilidade</button>
           <button class="btn btn-outline-secondary btn-sm avail-trigger-btn" onclick="openNotasModal()"><i class="bi bi-sticky me-1"></i>Notas &amp; observações</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="pdfEventos()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
           <span class="ms-auto chip chip-muted" id="evtCount">0 eventos</span>
         </div>
         <div class="panel p-0">
@@ -899,7 +905,8 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             <option>Pendente</option><option>Agendada</option><option>Confirmada</option><option>Em Curso</option><option>Concluída</option><option>Reagendada</option><option>Cancelada</option>
           </select>
           <select class="form-select" id="reuFilterTecnico"><option value="todos">Todos os técnicos</option></select>
-          <button class="btn btn-brand btn-sm ms-auto" onclick="openReuniaoModal()"><i class="bi bi-plus-lg me-1"></i>Nova reunião</button>
+          <button class="btn btn-brand btn-sm" onclick="openReuniaoModal()"><i class="bi bi-plus-lg me-1"></i>Nova reunião</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="pdfReunioes()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
           <span class="chip chip-muted" id="reuCount">0 reuniões</span>
         </div>
         <div class="panel p-0">
@@ -1509,7 +1516,8 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
               <option value="todos">Todos os estados</option>
               <option>Pendente</option><option>Aprovado</option><option>Rejeitado</option><option>Cancelado</option>
             </select>
-            <button class="btn btn-brand btn-sm ms-auto" onclick="openAusenciaModal()"><i class="bi bi-plus-lg me-1"></i>Registar Day Off / Ausência</button>
+            <button class="btn btn-brand btn-sm" onclick="openAusenciaModal()"><i class="bi bi-plus-lg me-1"></i>Registar Day Off / Ausência</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="pdfAusencias()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
           </div>
           <div class="table-responsive">
             <table class="table table-modern mb-0">
@@ -1641,6 +1649,53 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<div class="modal fade" id="novaEscolaModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold mb-0"><i class="bi bi-building me-1"></i>Nova Escola / Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Nome <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="novaEscolaNome" placeholder="Ex: Escola Secundária de Luanda">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Código <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="novaEscolaCodigo" placeholder="Ex: ESL001">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="novaEscolaEmail" placeholder="email@escola.ao">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone</label>
+            <input type="text" class="form-control" id="novaEscolaTelefone" placeholder="+244 9XX XXX XXX">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">NIF</label>
+            <input type="text" class="form-control" id="novaEscolaNif" placeholder="Número de identificação fiscal">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Diretor</label>
+            <input type="text" class="form-control" id="novaEscolaDiretor" placeholder="Nome do diretor">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Morada</label>
+            <input type="text" class="form-control" id="novaEscolaMorada" placeholder="Endereço completo">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-brand" id="novaEscolaSaveBtn"><i class="bi bi-check-lg me-1"></i>Criar escola</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
@@ -1655,25 +1710,46 @@ async function apiPut(url, data){ const r = await fetch(API+url, {method:'PUT', 
 async function apiDelete(url){ const r = await fetch(API+url, {method:'DELETE'}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
 
 async function loadAllData(){
-  const results = await Promise.allSettled([
-    ESCOLAS.length? Promise.resolve(ESCOLAS) : apiGet('/escolas'),
-    apiGet('/tecnicos'), apiGet('/eventos'), apiGet('/ausencias'),
-    apiGet('/reunioes'), apiGet('/planos'), apiGet('/notas'), apiGet('/ocorrencias'),
-  ]);
-  const ok = i => results[i].status==='fulfilled' ? results[i].value : [];
-  if(results[0].status==='fulfilled') ESCOLAS = ok(0);
-  TECNICOS = ok(1); EVENTOS = ok(2); AUSENCIAS = ok(3);
-  REUNIOES = ok(4); PLANOS_FORMACAO = ok(5); NOTAS = ok(6); OCORRENCIAS = ok(7);
   const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências'];
-  results.forEach((r,i)=>{ if(r.status==='rejected') console.error('loadAllData endpoint',endpointNames[i],'failed:',r.reason); });
-  if(results.some(r=>r.status==='rejected')) showToast('Alguns dados não foram carregados. A verificar ligação ao servidor.','warning');
-  nextTechId = Math.max(0, ...TECNICOS.map(t=>t.id), 0) + 1;
-  nextEventId = Math.max(0, ...EVENTOS.map(e=>e.id), 0) + 1;
-  nextAusenciaId = Math.max(0, ...AUSENCIAS.map(a=>a.id), 0) + 1;
-  nextReuniaoId = Math.max(0, ...REUNIOES.map(r=>r.id), 0) + 1;
-  nextPlanoId = Math.max(0, ...PLANOS_FORMACAO.map(p=>p.id), 0) + 1;
-  nextNotaId = Math.max(0, ...NOTAS.map(n=>n.id), 0) + 1;
-  nextOcorId = Math.max(0, ...OCORRENCIAS.map(o=>o.id), 0) + 1;
+  let loaded = 0, dashRendered = false;
+  const assign = [
+    d => { ESCOLAS = d; },
+    d => { TECNICOS = d; },
+    d => { EVENTOS = d; },
+    d => { AUSENCIAS = d; },
+    d => { REUNIOES = d; },
+    d => { PLANOS_FORMACAO = d; },
+    d => { NOTAS = d; },
+    d => { OCORRENCIAS = d; },
+  ];
+  const urls = [
+    ESCOLAS.length ? null : '/escolas',
+    '/tecnicos', '/eventos', '/ausencias', '/reunioes', '/planos', '/notas', '/ocorrencias',
+  ];
+  const finishOne = (i)=>{
+    loaded++;
+    if(!dashRendered && loaded>=3){ dashRendered=true; renderDashboard(); }
+    if(loaded===8) finalizeIds();
+  };
+  function finalizeIds(){
+    nextTechId = Math.max(0,...TECNICOS.map(t=>t.id),0)+1;
+    nextEventId = Math.max(0,...EVENTOS.map(e=>e.id),0)+1;
+    nextAusenciaId = Math.max(0,...AUSENCIAS.map(a=>a.id),0)+1;
+    nextReuniaoId = Math.max(0,...REUNIOES.map(r=>r.id),0)+1;
+    nextPlanoId = Math.max(0,...PLANOS_FORMACAO.map(p=>p.id),0)+1;
+    nextNotaId = Math.max(0,...NOTAS.map(n=>n.id),0)+1;
+    nextOcorId = Math.max(0,...OCORRENCIAS.map(o=>o.id),0)+1;
+  }
+  const promises = urls.map((u,i)=>{
+    if(!u){ assign[i](ESCOLAS); finishOne(i); return Promise.resolve(); }
+    return apiGet(u).then(d=>{ assign[i](d); finishOne(i); }).catch(e=>{
+      console.error('loadAllData endpoint',endpointNames[i],'failed:',e);
+      finishOne(i);
+    });
+  });
+  await Promise.all(promises);
+  if(!dashRendered){ dashRendered=true; renderDashboard(); }
+  finalizeIds();
 }
 
 /* =========================================================================
@@ -1758,7 +1834,7 @@ function initSchoolSelect(wrapperId, hiddenInputId, opts={}){
           <div class="ss-item-name">${e.nome}</div>
           <div class="ss-item-code">${e.codigo}</div>
         </div>
-      </div>`).join('') : `<div class="ss-empty"><i class="bi bi-search d-block mb-1" style="font-size:18px;"></i>Nenhuma escola encontrada</div>`;
+      </div>`).join('') : `<div class="ss-empty"><i class="bi bi-search d-block mb-1" style="font-size:18px;"></i>Nenhuma escola encontrada</div><button type="button" class="btn btn-sm btn-brand w-100 mt-1 ss-create-btn" onclick="event.stopPropagation(); openNovaEscolaModal('${input.value.replace(/'/g,"\\'")}')"><i class="bi bi-plus-lg me-1"></i>Criar escola</button>`;
     results.querySelectorAll('.ss-item').forEach(it=>{
       it.addEventListener('click', ()=> selectEscola(Number(it.dataset.id)));
     });
@@ -1791,6 +1867,44 @@ function initSchoolSelect(wrapperId, hiddenInputId, opts={}){
   _schoolSelects[wrapperId] = wrap;
   return wrap;
 }
+
+const novaEscolaModal = new bootstrap.Modal(document.getElementById('novaEscolaModal'));
+let _pendingSchoolSelect = null;
+function openNovaEscolaModal(prefillNome){
+  document.getElementById('novaEscolaNome').value = prefillNome || '';
+  document.getElementById('novaEscolaCodigo').value = '';
+  document.getElementById('novaEscolaEmail').value = '';
+  document.getElementById('novaEscolaTelefone').value = '';
+  document.getElementById('novaEscolaNif').value = '';
+  document.getElementById('novaEscolaDiretor').value = '';
+  document.getElementById('novaEscolaMorada').value = '';
+  novaEscolaModal.show();
+  setTimeout(()=> document.getElementById('novaEscolaNome').focus(), 200);
+}
+document.getElementById('novaEscolaSaveBtn').addEventListener('click', async ()=>{
+  const nome = document.getElementById('novaEscolaNome').value.trim();
+  const codigo = document.getElementById('novaEscolaCodigo').value.trim();
+  if(!nome){ showToast('Indica o nome da escola.','warning'); return; }
+  if(!codigo){ showToast('Indica o código da escola.','warning'); return; }
+  try{
+    const payload = {
+      nome, codigo,
+      email: document.getElementById('novaEscolaEmail').value.trim(),
+      telefone: document.getElementById('novaEscolaTelefone').value.trim(),
+      nif: document.getElementById('novaEscolaNif').value.trim(),
+      diretor: document.getElementById('novaEscolaDiretor').value.trim(),
+      morada: document.getElementById('novaEscolaMorada').value.trim(),
+    };
+    const nova = await apiPost('/escolas', payload);
+    ESCOLAS.push(nova);
+    novaEscolaModal.show(); // keep open? no, hide
+    novaEscolaModal.hide();
+    showToast('Escola "'+nome+'" criada com sucesso.','success');
+    Object.values(_schoolSelects).forEach(w=>{
+      if(w && w.__setValue) w.__setValue(nova.id);
+    });
+  }catch(e){ console.error('Erro ao criar escola:', e); showToast('Erro ao criar escola: '+e.message,'error'); }
+});
 
 /* =========================================================================
    PAGINAÇÃO (server-side style) — componente genérico
@@ -3698,6 +3812,153 @@ document.getElementById('planoPdfBtn').addEventListener('click', ()=>{
   dados.criadoEm = editingPlanoId ? (PLANOS_FORMACAO.find(p=>p.id===editingPlanoId)||{}).criadoEm : iso(today);
   gerarPlanoFormacaoPDF(dados);
 });
+
+/* ---------- PDF Utilities ---------- */
+function _pdfBase(orientation){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation: orientation||'landscape', unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const BR=[88,80,236], GRAY=[140,145,165], LGRAY=[247,248,252], DARK=[30,33,52], WHITE=[255,255,255];
+  const ML=48, MR=48, MW=W-ML-MR;
+  function drawHeader(title, subtitle){
+    doc.setFillColor(...WHITE); doc.rect(0,0,W,56,'F');
+    doc.setFillColor(...BR); doc.rect(0,0,W,3,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...DARK);
+    doc.text(title, ML, 28);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text(subtitle||'', ML, 42);
+    doc.setFontSize(7); doc.text('Eduall  ·  '+fmtDatePt(iso(today)), W-MR, 42, {align:'right'});
+  }
+  function drawFooters(){
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i=1;i<=pageCount;i++){
+      doc.setPage(i);
+      const h = doc.internal.pageSize.getHeight();
+      doc.setFillColor(...BR); doc.rect(0,h-2,W,2,'F');
+      doc.setDrawColor(220,222,235); doc.setLineWidth(0.3); doc.line(ML,h-26,W-MR,h-26);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+      doc.text('Eduall  ·  www.eduall.ao', ML, h-14);
+      doc.text(i+' / '+pageCount, W-MR, h-14, {align:'right'});
+    }
+  }
+  function autoTableHead(head, body, startY, opts){
+    doc.autoTable({
+      startY, head, body,
+      styles:{ fontSize:8, cellPadding:5, textColor:[40,42,60], lineColor:[230,232,242], lineWidth:0.5 },
+      headStyles:{ fillColor:BR, textColor:WHITE, fontStyle:'bold', fontSize:8 },
+      alternateRowStyles:{ fillColor:LGRAY },
+      margin:{ left:ML, right:MR, bottom:40 },
+      didDrawPage: ()=> drawFooters(),
+      ...opts
+    });
+    return doc.lastAutoTable.finalY;
+  }
+  return { doc, W, H, ML, MR, MW, BR, GRAY, LGRAY, DARK, WHITE, drawHeader, drawFooters, autoTableHead };
+}
+
+function pdfEventos(){
+  const p = _pdfBase();
+  const wk = currentWeekRange();
+  p.drawHeader('Relatório de Eventos', 'Período: '+fmtDatePt(wk.from)+' — '+fmtDatePt(wk.to));
+  const rows = EVENTOS.filter(e=> e.data>=wk.from && e.data<=wk.to).sort((a,b)=>(a.data+a.horaInicio).localeCompare(b.data+b.horaInicio));
+  const body = rows.map(e=>{
+    const t = e.tecnicoId ? techById(e.tecnicoId) : null;
+    const esc = e.escolaId ? escolaById(e.escolaId) : null;
+    return [fmtDatePt(e.data), e.horaInicio+'-'+e.horaFim, t?t.nome:'—', e.tipo, e.estado, esc?esc.nome:(e.local||'—')];
+  });
+  p.autoTableHead([['Data','Horário','Técnico','Tipo','Estado','Local']], body, 70);
+  p.doc.save('Eventos_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+function pdfReunioes(){
+  const p = _pdfBase();
+  p.drawHeader('Relatório de Reuniões Estratégicas', 'Todas as reuniões registadas');
+  const rows = REUNIOES.sort((a,b)=>(a.data+a.horaInicio).localeCompare(b.data+b.horaInicio));
+  const body = rows.map(r=>{
+    const esc = r.escolaId ? escolaById(r.escolaId) : null;
+    const t = r.tecnicoId ? techById(r.tecnicoId) : null;
+    return [fmtDatePt(r.data), r.horaInicio+'-'+r.horaFim, esc?esc.nome:'—', t?t.nome:'—', r.estado];
+  });
+  p.autoTableHead([['Data','Horário','Escola','Técnico','Estado']], body, 70);
+  p.doc.save('Reunioes_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+function pdfAusencias(){
+  const p = _pdfBase();
+  p.drawHeader('Relatório de Ausências', 'Férias, day-off e ausências');
+  const rows = AUSENCIAS.sort((a,b)=>(b.inicio).localeCompare(a.inicio));
+  const body = rows.map(a=>{
+    const t = a.tecnicoId ? techById(a.tecnicoId) : null;
+    return [t?t.nome:'—', a.tipo, fmtDatePt(a.inicio), fmtDatePt(a.fim), a.meioDia?'Meio dia':'Dia inteiro', a.estado];
+  });
+  p.autoTableHead([['Técnico','Tipo','Início','Fim','Duração','Estado']], body, 70);
+  p.doc.save('Ausencias_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+function pdfOcorrencias(){
+  const p = _pdfBase();
+  p.drawHeader('Relatório de Ocorrências', 'Todas as ocorrências registadas');
+  const rows = OCORRENCIAS.sort((a,b)=>(b.atualizadoEm||'').localeCompare(a.atualizadoEm||''));
+  const body = rows.map(o=>{
+    const t = o.tecnicoId ? techById(o.tecnicoId) : null;
+    const esc = o.escolaId ? escolaById(o.escolaId) : null;
+    return [fmtDatePt(o.criadoEm), o.titulo, t?t.nome:'—', esc?esc.nome:'—', o.prioridade, o.estado];
+  });
+  p.autoTableHead([['Data','Título','Técnico','Escola','Prioridade','Estado']], body, 70);
+  p.doc.save('Ocorrencias_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+function pdfTecnicos(){
+  const p = _pdfBase();
+  const wk = currentWeekRange();
+  p.drawHeader('Relatório de Técnicos & Ocupação', 'Semana: '+fmtDatePt(wk.from)+' — '+fmtDatePt(wk.to));
+  const rows = TECNICOS.map(t=>{
+    const stats = occupancyStats(t, wk.from, wk.to);
+    return [t.nome, t.equipa||'—', t.estado, t.horaInicio+'-'+t.horaFim, fmtHoras(stats.ocupadoMin), fmtHoras(stats.livreMin), stats.pct+'%'];
+  }).sort((a,b)=> parseInt(b[6])-parseInt(a[6]));
+  p.autoTableHead([['Nome','Equipá','Estado','Horário','Ocupado','Livre','Ocupação %']], body=rows, 70);
+  p.doc.save('Tecnicos_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+function pdfDashboard(){
+  const p = _pdfBase();
+  const wk = currentWeekRange();
+  const disp = TECNICOS.filter(t=>t.estado==='Disponível').length;
+  const ocup = TECNICOS.filter(t=>t.estado==='Ocupado').length;
+  const evHoje = EVENTOS.filter(e=>e.data===iso(today)&&e.estado!=='Cancelado').length;
+  const evSem = EVENTOS.filter(e=>e.data>=wk.from&&e.data<=wk.to&&e.estado!=='Cancelado').length;
+  p.drawHeader('Dashboard — Visão Geral', fmtDatePt(iso(today)));
+  let y = 70;
+  const kpis = [
+    ['Técnicos disponíveis', String(disp)],
+    ['Em serviço', String(ocup)],
+    ['Eventos hoje', String(evHoje)],
+    ['Eventos esta semana', String(evSem)],
+    ['Total de técnicos', String(TECNICOS.length)],
+  ];
+  p.doc.setFont('helvetica','bold'); p.doc.setFontSize(10); p.doc.setTextColor(...p.DARK);
+  p.doc.text('Indicadores-Chave', p.ML, y); y+=18;
+  kpis.forEach(([lbl,val])=>{
+    p.doc.setFont('helvetica','normal'); p.doc.setFontSize(8); p.doc.setTextColor(...p.GRAY);
+    p.doc.text(lbl.toUpperCase(), p.ML, y);
+    p.doc.setFont('helvetica','bold'); p.doc.setFontSize(12); p.doc.setTextColor(...p.DARK);
+    p.doc.text(val, p.ML, y+14);
+    y+=32;
+  });
+  y+=10;
+  p.doc.setFont('helvetica','bold'); p.doc.setFontSize(10); p.doc.setTextColor(...p.DARK);
+  p.doc.text('Próximos Eventos', p.ML, y); y+=4;
+  const proximos = EVENTOS.filter(e=>(e.data>=iso(today))&&e.estado!=='Cancelado'&&e.estado!=='Concluído')
+    .sort((a,b)=>(a.data+a.horaInicio).localeCompare(b.data+b.horaInicio)).slice(0,10);
+  const body = proximos.map(e=>{
+    const t = e.tecnicoId?techById(e.tecnicoId):null;
+    const esc = e.escolaId?escolaById(e.escolaId):null;
+    return [fmtDatePt(e.data), e.horaInicio+'-'+e.horaFim, t?t.nome:'—', e.tipo, esc?esc.nome:(e.local||'—')];
+  });
+  if(body.length) p.autoTableHead([['Data','Horário','Técnico','Tipo','Local']], body, y);
+  p.doc.save('Dashboard_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
 
 function gerarPlanoFormacaoPDF(dados){
   const { jsPDF } = window.jspdf;
