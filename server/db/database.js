@@ -218,13 +218,17 @@ async function initSchema() {
 
     await db.execute(`CREATE TABLE IF NOT EXISTS saldo_logistica (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      tecnico_id INT NOT NULL,
+      tecnico_id INT DEFAULT NULL,
       valor DECIMAL(10,2) NOT NULL DEFAULT 0,
       descricao VARCHAR(255) NOT NULL DEFAULT '',
       data VARCHAR(10) NOT NULL,
       criado_em VARCHAR(10) NOT NULL,
       INDEX idx_sl_tecnico (tecnico_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    try {
+      await db.execute('ALTER TABLE saldo_logistica MODIFY tecnico_id INT DEFAULT NULL');
+    } catch (_) { /* column already nullable or table not created yet */ }
 
     console.log('MySQL schema initialized successfully');
   } finally {
