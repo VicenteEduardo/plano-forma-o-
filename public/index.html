@@ -683,6 +683,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                 </div>
               </div>
               <div id="listaOcorrencias"></div>
+              <div class="pg-bar" id="pgOcorrencias"></div>
             </div>
           </div>
         </div>
@@ -1650,9 +1651,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 ========================================================================= */
 const API = '/api';
 async function apiGet(url){ const r = await fetch(API+url); if(!r.ok) throw new Error(`API error ${r.status}`); return r.json(); }
-async function apiPost(url, data){ const r = await fetch(API+url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok) throw new Error(`API error ${r.status}`); return r.json(); }
-async function apiPut(url, data){ const r = await fetch(API+url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok) throw new Error(`API error ${r.status}`); return r.json(); }
-async function apiDelete(url){ const r = await fetch(API+url, {method:'DELETE'}); if(!r.ok) throw new Error(`API error ${r.status}`); return r.json(); }
+async function apiPost(url, data){ const r = await fetch(API+url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
+async function apiPut(url, data){ const r = await fetch(API+url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
+async function apiDelete(url){ const r = await fetch(API+url, {method:'DELETE'}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
 
 async function loadAllData(){
   const results = await Promise.allSettled([
@@ -2442,6 +2443,7 @@ document.getElementById('techSaveBtn').addEventListener('click', async ()=>{
     techModal.hide();
     await loadAllData();
     refreshAll();
+    showToast(editingTechId ? 'Técnico atualizado com sucesso.' : 'Técnico criado com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar técnico:', e); showToast('Erro ao guardar técnico: '+e.message,'error'); }
 });
 
@@ -3040,9 +3042,11 @@ document.getElementById('notaSaveBtn').addEventListener('click', async ()=>{
     } else {
       await apiPost('/notas', {titulo, descricao, imagem:pendingNotaImage});
     }
+    const wasEditing = !!editingNotaId;
     resetNotaForm();
     await loadAllData();
     renderNotasList();
+    showToast(wasEditing ? 'Nota atualizada com sucesso.' : 'Nota criada com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar nota:', e); showToast('Erro ao guardar nota: '+e.message,'error'); }
 });
 function editNota(id){
@@ -3058,7 +3062,7 @@ function editNota(id){
 }
 function deleteNota(id){
   if(!confirm('Remover esta nota?')) return;
-  apiDelete('/notas/'+id).then(()=>{ if(editingNotaId===id) resetNotaForm(); loadAllData().then(()=> renderNotasList()); }).catch(e=>{ console.error('Erro ao remover nota:', e); showToast('Erro ao remover nota: '+e.message,'error'); });
+  apiDelete('/notas/'+id).then(()=>{ if(editingNotaId===id) resetNotaForm(); loadAllData().then(()=> renderNotasList()); showToast('Nota removida com sucesso.','success'); }).catch(e=>{ console.error('Erro ao remover nota:', e); showToast('Erro ao remover nota: '+e.message,'error'); });
 }
 document.getElementById('notaSearch').addEventListener('input', renderNotasList);
 
@@ -3184,12 +3188,39 @@ function resetOcorForm(){
   renderOcorVideoPreview();
 }
 
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = ()=> reject(new Error('Erro ao ler ficheiro'));
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onerror = ()=> reject(new Error('Erro ao carregar imagem'));
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          const ratio = Math.min(maxDim/w, maxDim/h);
+          w = Math.round(w*ratio); h = Math.round(h*ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        if(!dataUrl || dataUrl.length < 100) return reject(new Error('Resultado inválido'));
+        resolve(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function handleOcorFotoFiles(files){
   Array.from(files||[]).forEach(file=>{
     if(!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e)=>{ pendingOcorFotos.push(e.target.result); renderOcorGallery(); };
-    reader.readAsDataURL(file);
+    compressImage(file, 1200, 0.75).then(dataUrl=>{
+      pendingOcorFotos.push(dataUrl);
+      renderOcorGallery();
+    }).catch(()=>{ showToast('Erro ao processar imagem.','error'); });
   });
 }
 function removeOcorFoto(idx){ pendingOcorFotos.splice(idx,1); renderOcorGallery(); }
@@ -3212,8 +3243,10 @@ ocorFotoDz.addEventListener('drop', (e)=>{
 
 function handleOcorVideoFile(file){
   if(!file || !file.type.startsWith('video/')) return;
+  if(file.size > 20*1024*1024){ showToast('O vídeo é demasiado grande (máx 20MB).','warning'); return; }
   const reader = new FileReader();
   reader.onload = (e)=>{ pendingOcorVideo = e.target.result; renderOcorVideoPreview(); };
+  reader.onerror = ()=> showToast('Erro ao ler o vídeo.','error');
   reader.readAsDataURL(file);
 }
 function removeOcorVideo(){ pendingOcorVideo = null; renderOcorVideoPreview(); }
@@ -3235,6 +3268,8 @@ ocorVideoDz.addEventListener('drop', (e)=>{
 });
 
 document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('ocorSaveBtn');
+  const isEdit = !!editingOcorId;
   try{
     const titulo = document.getElementById('ocorTitulo').value.trim();
     const descricao = document.getElementById('ocorDescricao').value.trim();
@@ -3253,7 +3288,8 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
       fotos: [...pendingOcorFotos],
       video: pendingOcorVideo,
     };
-    if(editingOcorId){
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
+    if(isEdit){
       await apiPut('/ocorrencias/'+editingOcorId, payload);
       delete ocorMediaCache[editingOcorId];
     } else {
@@ -3262,7 +3298,9 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
     ocorrenciaModal.hide();
     await loadAllData();
     renderOcorrencias();
+    showToast(isEdit ? 'Ocorrência atualizada com sucesso.' : 'Ocorrência criada com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar ocorrência:', e); showToast('Erro ao guardar ocorrência: '+e.message,'error'); }
+  finally{ btn.disabled = false; btn.innerHTML = isEdit ? 'Atualizar ocorrência' : 'Guardar ocorrência'; }
 });
 document.getElementById('ocorDeleteBtn').addEventListener('click', async ()=>{
   try{
@@ -3272,6 +3310,7 @@ document.getElementById('ocorDeleteBtn').addEventListener('click', async ()=>{
     ocorrenciaModal.hide();
     await loadAllData();
     renderOcorrencias();
+    showToast('Ocorrência removida com sucesso.', 'success');
   }catch(e){ console.error('Erro ao remover ocorrência:', e); showToast('Erro ao remover ocorrência: '+e.message,'error'); }
 });
 document.getElementById('ocorrenciaModal').addEventListener('hidden.bs.modal', resetOcorForm);
@@ -3293,6 +3332,10 @@ function renderOcorrencias(){
     (fPrio==='todos' || o.prioridade===fPrio)
   );
   list.sort((a,b)=> b.atualizadoEm.localeCompare(a.atualizadoEm));
+
+  const pgMeta = paginateSlice(list, 'ocorrencias', 10);
+  renderPaginationBar('pgOcorrencias','ocorrencias', pgMeta, renderOcorrencias);
+  list = pgMeta.slice;
 
   const cont = document.getElementById('listaOcorrencias');
   if(!list.length){
@@ -4048,6 +4091,7 @@ document.getElementById('reuSaveBtn').addEventListener('click', async ()=>{
     reuniaoModal.hide();
     await loadAllData();
     renderReunioes();
+    showToast(editingReuniaoId ? 'Reunião atualizada com sucesso.' : 'Reunião criada com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar reunião:', e); showToast('Erro ao guardar reunião: '+e.message,'error'); }
 });
 
@@ -4272,6 +4316,7 @@ document.getElementById('ausSaveBtn').addEventListener('click', async ()=>{
     ausenciaModal.hide();
     await loadAllData();
     renderAusenciasList(); renderAusenciasWidget(); renderTecnicos(); renderDashboard();
+    showToast(editingAusenciaId ? 'Ausência atualizada com sucesso.' : 'Ausência criada com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar ausência:', e); showToast('Erro ao guardar ausência: '+e.message,'error'); }
 });
 

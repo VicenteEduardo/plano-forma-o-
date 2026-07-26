@@ -48,7 +48,7 @@ app.get('*', (req, res) => {
 // Global error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Erro interno do servidor' });
+  res.status(500).json({ error: err.message || 'Erro interno do servidor' });
 });
 
 async function start() {
