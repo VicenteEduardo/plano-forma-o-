@@ -202,6 +202,30 @@ async function initSchema() {
       INDEX idx_ov_ocorrencia (ocorrencia_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
+    await db.execute(`CREATE TABLE IF NOT EXISTS gastos_logistica (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      tecnico_id INT,
+      escola_id INT,
+      tipo VARCHAR(50) NOT NULL DEFAULT 'Outros',
+      valor DECIMAL(10,2) NOT NULL DEFAULT 0,
+      data VARCHAR(10) NOT NULL,
+      observacoes TEXT,
+      criado_em VARCHAR(10) NOT NULL,
+      INDEX idx_gl_tecnico (tecnico_id),
+      INDEX idx_gl_escola (escola_id),
+      INDEX idx_gl_data (data)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    await db.execute(`CREATE TABLE IF NOT EXISTS saldo_logistica (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      tecnico_id INT NOT NULL,
+      valor DECIMAL(10,2) NOT NULL DEFAULT 0,
+      descricao VARCHAR(255) NOT NULL DEFAULT '',
+      data VARCHAR(10) NOT NULL,
+      criado_em VARCHAR(10) NOT NULL,
+      INDEX idx_sl_tecnico (tecnico_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
     console.log('MySQL schema initialized successfully');
   } finally {
     db.release();

@@ -36,6 +36,8 @@ app.use('/api/reunioes', require('./routes/reunioes'));
 app.use('/api/planos', require('./routes/planos'));
 app.use('/api/notas', require('./routes/notas'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
+app.use('/api/gastos-logistica', require('./routes/gastos_logistica'));
+app.use('/api/saldo-logistica', require('./routes/saldo_logistica'));
 
 // Conflict check endpoint
 app.use('/api/conflictos', require('./routes/conflictos'));

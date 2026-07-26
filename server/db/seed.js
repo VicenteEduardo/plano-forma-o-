@@ -9,7 +9,7 @@ function shiftDate(dateStr, days) {
 async function seed() {
   const dbDrop = await getDb();
   try {
-    const tables = ['ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
+    const tables = ['saldo_logistica','gastos_logistica','ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
     for (const t of tables) await dbDrop.execute(`DROP TABLE IF EXISTS ${t}`);
   } finally {
     dbDrop.release();
@@ -19,7 +19,7 @@ async function seed() {
   const db = await getDb();
 
   try {
-    const today = '2026-07-23';
+    const today = new Date().toISOString().slice(0,10);
 
     const escStmt = await db.prepare('INSERT INTO escolas (nome, codigo) VALUES (?, ?)');
     const escolas = [
@@ -115,6 +115,21 @@ async function seed() {
     await ocorStmt.execute([1, 'Impressora não liga', 8, 'Cliente reporta que a impressora da secretaria deixou de ligar depois de uma queda de energia.', 2, 8, 'Alta', 'Grave', 'Em análise', '', shiftDate(today,-1), shiftDate(today,-1)]);
     await ocorStmt.execute([2, 'Rede WiFi instável no laboratório', 4, 'Professores relatam quedas frequentes de ligação durante as aulas práticas.', 4, 5, 'Média', 'Moderada', 'Aberta', '', today, today]);
     await ocorStmt.execute([3, 'Servidor local encravado', 4, 'Servidor deixou de responder e sistema de gestão escolar ficou indisponível para toda a escola.', 2, 2, 'Urgente', 'Crítica', 'Resolvida', 'Substituída a fonte de alimentação do servidor e reiniciado o serviço; sistema validado com o cliente.', shiftDate(today,-2), shiftDate(today,-1)]);
+
+    const saldoStmt = await db.prepare('INSERT INTO saldo_logistica (tecnico_id, valor, descricao, data, criado_em) VALUES (?, ?, ?, ?, ?)');
+    await saldoStmt.execute([1, 75000, 'Saldo mensal de julho', today, today]);
+    await saldoStmt.execute([2, 60000, 'Saldo mensal de julho', today, today]);
+    await saldoStmt.execute([3, 50000, 'Saldo mensal de julho', today, today]);
+    await saldoStmt.execute([4, 80000, 'Saldo mensal de julho', today, today]);
+    await saldoStmt.execute([1, 25000, 'Adicional — deslocação Benguela', shiftDate(today,-5), shiftDate(today,-5)]);
+
+    const gastoStmt = await db.prepare('INSERT INTO gastos_logistica (tecnico_id, escola_id, tipo, valor, data, observacoes, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    await gastoStmt.execute([1, 5, 'Formação', 8500, today, 'Combustível ida e volta Kilamba', today]);
+    await gastoStmt.execute([1, 5, 'Outros', 3200, today, 'Almoço na zona', today]);
+    await gastoStmt.execute([2, 8, 'Reunião', 5000, shiftDate(today,-1), 'Deslocação ao cliente Viana', shiftDate(today,-1)]);
+    await gastoStmt.execute([3, 3, 'Formação', 12000, shiftDate(today,-2), 'Formação de professores — material impresso', shiftDate(today,-2)]);
+    await gastoStmt.execute([4, 4, 'Apresentação do Sistema', 7500, shiftDate(today,-3), 'Apresentação no Instituto Politécnico', shiftDate(today,-3)]);
+    await gastoStmt.execute([2, 1, 'Outros', 4000, shiftDate(today,-4), 'Transporte e refeições', shiftDate(today,-4)]);
 
     console.log('MySQL seed completed successfully!');
   } finally {

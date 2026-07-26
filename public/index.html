@@ -210,6 +210,8 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 .chip-warn{background:var(--warn-bg); color:var(--warn);}
 .chip-bad{background:var(--bad-bg); color:var(--bad);}
 .chip-info{background:var(--info-bg); color:var(--info);}
+.chip-warning{background:#FFF3E0; color:#E65100;}
+.chip-purple{background:#F3E8FF; color:#7C3AED;}
 .chip-muted{background:#EEF0F7; color:var(--ink-500);}
 
 .type-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;color:#fff;}
@@ -494,6 +496,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         <div class="nav-pill" data-view="planos"><i class="bi bi-clock-history"></i> Planos</div>
         <div class="nav-pill" data-view="disponibilidade"><i class="bi bi-calendar2-check-fill"></i> Disponibilidade</div>
         <div class="nav-pill" data-view="reunioes"><i class="bi bi-people-fill"></i> Reuniões</div>
+        <div class="nav-pill" data-view="gastos"><i class="bi bi-cash-stack"></i> Gastos</div>
       </div>
       <div class="topnav-actions">
         <button class="btn btn-soft btn-sm" onclick="openTechModal()"><i class="bi bi-person-plus me-1"></i><span class="d-none-xs">Novo técnico</span></button>
@@ -681,6 +684,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                   <select class="form-select form-select-sm" id="ocorFilterPrioridade" style="width:auto;">
                     <option value="todos">Todas as prioridades</option>
                     <option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option>
+                  </select>
+                  <select class="form-select form-select-sm" id="ocorFilterEscola" style="width:auto;">
+                    <option value="todos">Todas as escolas</option>
                   </select>
                   <button class="btn btn-danger btn-sm" onclick="openOcorrenciaModal()"><i class="bi bi-plus-lg me-1"></i>Nova ocorrência</button>
                   <button class="btn btn-outline-danger btn-sm" onclick="pdfOcorrencias()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
@@ -926,6 +932,76 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </table>
           </div>
           <div class="pg-bar" id="pgReunioes"></div>
+        </div>
+      </section>
+
+      <section class="section-view" id="view-gastos">
+        <div class="filter-bar">
+          <input type="text" class="form-control" id="gastosSearch" placeholder="Pesquisar por técnico, escola...">
+          <select class="form-select" id="gastosFilterTipo">
+            <option value="todos">Todos os tipos</option>
+            <option>Formação</option><option>Reunião</option><option>Apresentação do Sistema</option><option>Outros</option>
+          </select>
+          <select class="form-select" id="gastosFilterTecnico"><option value="todos">Todos os técnicos</option></select>
+          <button class="btn btn-brand btn-sm" onclick="openGastoModal()"><i class="bi bi-plus-lg me-1"></i>Novo Gasto</button>
+          <button class="btn btn-outline-success btn-sm" onclick="openSaldoModal()"><i class="bi bi-wallet2 me-1"></i>Adicionar Saldo</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="pdfGastos()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:var(--brand-50);color:var(--brand-600);"><i class="bi bi-cash-stack"></i></div>
+              <div><div class="kpi-value" id="gastosKpiTotal">0</div><div class="kpi-label">Total Gastos</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E8F5E9;color:#2E7D32;"><i class="bi bi-wallet2"></i></div>
+              <div><div class="kpi-value" id="gastosKpiSaldo">0</div><div class="kpi-label">Saldo Total Disponível</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#FFF3E0;color:#E65100;"><i class="bi bi-receipt"></i></div>
+              <div><div class="kpi-value" id="gastosKpiCount">0</div><div class="kpi-label">Nº de Registos</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E3F2FD;color:#1565C0;"><i class="bi bi-speedometer2"></i></div>
+              <div><div class="kpi-value" id="gastosKpiMedia">0</div><div class="kpi-label">Média por Gasto</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel mb-3" id="gastosSaldoPanel" style="display:none;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="fw-bold" style="font-size:14px;"><i class="bi bi-wallet2 me-1 text-success"></i>Saldos por Técnico</div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-modern mb-0" style="font-size:13px;">
+              <thead><tr><th>Técnico</th><th class="text-end">Saldo Atribuído</th><th class="text-end">Total Gasto</th><th class="text-end">Saldo Disponível</th><th class="text-end">Ações</th></tr></thead>
+              <tbody id="tabelaSaldoBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel p-0">
+          <div class="table-responsive">
+            <table class="table table-modern mb-0">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Técnico</th>
+                  <th>Escola</th>
+                  <th>Tipo</th>
+                  <th class="text-end">Valor (Kz)</th>
+                  <th>Observação</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaGastosBody"></tbody>
+            </table>
+          </div>
+          <div class="pg-bar" id="pgGastos"></div>
         </div>
       </section>
 
@@ -1696,6 +1772,111 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<!-- ============ MODAL: GASTO DE LOGÍSTICA ============ -->
+<div class="modal fade" id="gastoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold mb-0" id="gastoModalTitle"><i class="bi bi-cash-stack me-1"></i>Novo Gasto de Logística</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Regista gastos com transporte, alimentação e outros custos operacionais</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="gastoForm">
+          <input type="hidden" id="gastoId">
+          <div id="gastoSaldoInfo" class="mb-3" style="display:none;">
+            <div class="alert alert-info py-2 px-3 mb-0" style="font-size:13px;">
+              <i class="bi bi-wallet2 me-1"></i>Saldo disponível: <strong id="gastoSaldoDisplay">0</strong> Kz
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Técnico <span class="text-danger">*</span></label>
+              <select class="form-select" id="gastoTecnico" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Escola / Cliente</label>
+              <div class="ss-control" id="ssWrapGastoEscola">
+                <input type="hidden" id="gastoEscolaId">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo <span class="text-danger">*</span></label>
+              <select class="form-select" id="gastoTipo" required>
+                <option value="">Selecionar...</option>
+                <option>Formação</option>
+                <option>Reunião</option>
+                <option>Apresentação do Sistema</option>
+                <option>Outros</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Valor (Kz) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="gastoValor" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Data</label>
+              <input type="date" class="form-control" id="gastoData">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" id="gastoObservacoes" rows="2" placeholder="Detalhes do gasto..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-danger me-auto d-none" id="gastoDeleteBtn"><i class="bi bi-trash me-1"></i>Remover</button>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-brand" id="gastoSaveBtn">Guardar gasto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: ADICIONAR SALDO ============ -->
+<div class="modal fade" id="saldoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="bi bi-wallet2 me-1 text-success"></i>Adicionar Saldo de Logística</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Atribuir saldo a um técnico para despesas de campo</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="saldoForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Técnico <span class="text-danger">*</span></label>
+              <select class="form-select" id="saldoTecnico" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Valor (Kz) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="saldoValor" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Data</label>
+              <input type="date" class="form-control" id="saldoData">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Descrição</label>
+              <input type="text" class="form-control" id="saldoDescricao" placeholder="Ex: Saldo mensal de julho">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="saldoSaveBtn">Adicionar saldo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
@@ -1708,9 +1889,17 @@ async function apiGet(url){ const r = await fetch(API+url); if(!r.ok) throw new 
 async function apiPost(url, data){ const r = await fetch(API+url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
 async function apiPut(url, data){ const r = await fetch(API+url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
 async function apiDelete(url){ const r = await fetch(API+url, {method:'DELETE'}); if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`API error ${r.status}`); } return r.json(); }
+async function apiUpload(url, fieldName, fileOrFiles){
+  const fd = new FormData();
+  if(Array.isArray(fileOrFiles)){ fileOrFiles.forEach(f=>fd.append(fieldName, f)); }
+  else { fd.append(fieldName, fileOrFiles); }
+  const r = await fetch(API+url, {method:'POST', body:fd});
+  if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`Upload error ${r.status}`); }
+  return r.json();
+}
 
 async function loadAllData(){
-  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências'];
+  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo por técnico'];
   let loaded = 0, dashRendered = false;
   const assign = [
     d => { ESCOLAS = d; },
@@ -1721,15 +1910,18 @@ async function loadAllData(){
     d => { PLANOS_FORMACAO = d; },
     d => { NOTAS = d; },
     d => { OCORRENCIAS = d; },
+    d => { GASTOS = d; },
+    d => { SALDO_POR_TECNICO = d; },
   ];
   const urls = [
     ESCOLAS.length ? null : '/escolas',
     '/tecnicos', '/eventos', '/ausencias', '/reunioes', '/planos', '/notas', '/ocorrencias',
+    '/gastos-logistica', '/saldo-logistica/saldo-por-tecnico',
   ];
   const finishOne = (i)=>{
     loaded++;
     if(!dashRendered && loaded>=3){ dashRendered=true; renderDashboard(); }
-    if(loaded===8) finalizeIds();
+    if(loaded===urls.length) finalizeIds();
   };
   function finalizeIds(){
     nextTechId = Math.max(0,...TECNICOS.map(t=>t.id),0)+1;
@@ -1960,7 +2152,7 @@ function renderPaginationBar(containerId, key, meta, onChange){
 let TECNICOS = [];
 let nextTechId = 1;
 
-const today = new Date(2026,6,23); // 23 julho 2026
+const today = new Date();
 function iso(d){ return d.toISOString().slice(0,10); }
 function shiftDate(base, days){ const d = new Date(base); d.setDate(d.getDate()+days); return d; }
 
@@ -2027,6 +2219,9 @@ function minToTime(m){ const h=Math.floor(m/60), mi=m%60; return String(h).padSt
 function fmtDatePt(dstr){
   const d = new Date(dstr+'T00:00:00');
   return d.toLocaleDateString('pt-PT', {day:'2-digit', month:'short', year:'numeric'});
+}
+function fmtNum(n){
+  return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:0,maximumFractionDigits:2});
 }
 function weekdayShort(d){ return d.toLocaleDateString('pt-PT',{weekday:'short'}).replace('.',''); }
 function startOfWeek(d){ const nd=new Date(d); const day=(nd.getDay()+6)%7; nd.setDate(nd.getDate()-day); nd.setHours(0,0,0,0); return nd; }
@@ -2156,6 +2351,7 @@ const pageMeta = {
   planos:{title:'Histórico de Planos de Formação', sub:'Todos os planos por escola — versões, estados e PDFs gerados'},
   disponibilidade:{title:'Dashboard de Disponibilidade', sub:'Disponibilidade em tempo real de todos os colaboradores'},
   reunioes:{title:'Reuniões Estratégicas', sub:'Reuniões entre escolas, direção e equipa Eduall'},
+  gastos:{title:'Gastos de Logística', sub:'Gestão de despesas operacionais e saldos dos técnicos'},
 };
 document.querySelectorAll('.nav-pill').forEach(el=>{
   el.addEventListener('click', ()=>{
@@ -2176,6 +2372,7 @@ document.querySelectorAll('.nav-pill').forEach(el=>{
       if(view==='planos') renderPlanosHistorico();
       if(view==='disponibilidade') renderDisponibilidade();
       if(view==='reunioes') renderReunioes();
+      if(view==='gastos') renderGastos();
     }catch(e){ console.error('Nav render error:', e); }
   });
 });
@@ -3262,11 +3459,18 @@ function renderNotasList(){
    OCORRÊNCIAS (problemas reportados pelos clientes)
 ========================================================================= */
 let OCORRENCIAS = [];
+let GASTOS = [];
+let SALDOS = [];
+let SALDO_POR_TECNICO = [];
 let nextOcorId = 1;
 let editingOcorId = null;
 let pendingOcorFotos = [];
 let pendingOcorVideo = null;
 let ocorMediaCache = {};
+let existingOcorFotos = [];
+let existingOcorVideo = null;
+let deleteOcorFotos = [];
+let deleteOcorVideo = null;
 
 const ocorrenciaModal = new bootstrap.Modal(document.getElementById('ocorrenciaModal'));
 
@@ -3324,19 +3528,25 @@ function openOcorrenciaModal(id){
 async function loadOcorMedia(ocorId){
   try {
     if(ocorMediaCache[ocorId]){
-      pendingOcorFotos = [...ocorMediaCache[ocorId].fotos];
-      pendingOcorVideo = ocorMediaCache[ocorId].video;
+      existingOcorFotos = [...ocorMediaCache[ocorId].fotos];
+      existingOcorVideo = ocorMediaCache[ocorId].video;
+      pendingOcorFotos = existingOcorFotos.map(f=> typeof f === 'object' ? f.path : f);
+      pendingOcorVideo = existingOcorVideo ? (typeof existingOcorVideo === 'object' ? existingOcorVideo.path : existingOcorVideo) : null;
       return;
     }
     const media = await apiGet('/ocorrencias/'+ocorId+'/media');
-    pendingOcorFotos = media.fotos || [];
-    pendingOcorVideo = media.video || null;
-    ocorMediaCache[ocorId] = { fotos: [...pendingOcorFotos], video: pendingOcorVideo };
+    existingOcorFotos = (media.fotos || []).map((f,i)=>({id: f.id || null, path: f.path || f}));
+    existingOcorVideo = media.video ? {id: media.video.id || null, path: media.video.path || media.video} : null;
+    ocorMediaCache[ocorId] = { fotos: [...existingOcorFotos], video: existingOcorVideo };
+    pendingOcorFotos = existingOcorFotos.map(f=> typeof f === 'object' ? f.path : f);
+    pendingOcorVideo = existingOcorVideo ? (typeof existingOcorVideo === 'object' ? existingOcorVideo.path : existingOcorVideo) : null;
   } catch(e) {
     console.error('Erro ao carregar media da ocorrência:', e);
     showToast('Erro ao carregar fotos/vídeos: '+e.message, 'error');
     pendingOcorFotos = [];
     pendingOcorVideo = null;
+    existingOcorFotos = [];
+    existingOcorVideo = null;
   }
 }
 function resetOcorForm(){
@@ -4501,6 +4711,252 @@ document.querySelectorAll('#view-reunioes .sortable').forEach(th=>{
 });
 
 /* =========================================================================
+   GASTOS DE LOGÍSTICA
+========================================================================= */
+let gastosSortKey = 'data', gastosSortDir = -1;
+let editingGastoId = null;
+const gastoModal = new bootstrap.Modal(document.getElementById('gastoModal'));
+const saldoModal = new bootstrap.Modal(document.getElementById('saldoModal'));
+
+function populateGastosSelects(){
+  const selTec = document.getElementById('gastoTecnico');
+  selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  const selFilter = document.getElementById('gastosFilterTecnico');
+  selFilter.innerHTML = '<option value="todos">Todos os técnicos</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  const selSaldo = document.getElementById('saldoTecnico');
+  selSaldo.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+}
+
+function renderGastos(){
+  populateGastosSelects();
+  const fTipo = document.getElementById('gastosFilterTipo').value;
+  const fTecnico = document.getElementById('gastosFilterTecnico').value;
+  const search = (document.getElementById('gastosSearch').value||'').toLowerCase();
+
+  let list = GASTOS.filter(g=>
+    (fTipo==='todos' || g.tipo===fTipo) &&
+    (fTecnico==='todos' || String(g.tecnicoId)===String(fTecnico)) &&
+    (!search || (g.tecnicoNome||'').toLowerCase().includes(search) || (g.escolaNome||'').toLowerCase().includes(search) || (g.observacoes||'').toLowerCase().includes(search))
+  );
+  list.sort((a,b)=> {
+    let va=a[gastosSortKey], vb=b[gastosSortKey];
+    if(gastosSortKey==='valor'){ va=Number(va); vb=Number(vb); }
+    if(va<vb) return -1*gastosSortDir;
+    if(va>vb) return 1*gastosSortDir;
+    return 0;
+  });
+
+  const total = list.reduce((s,g)=> s+g.valor, 0);
+  const count = list.length;
+  const media = count ? (total/count) : 0;
+  document.getElementById('gastosKpiTotal').textContent = fmtNum(total) + ' Kz';
+  document.getElementById('gastosKpiCount').textContent = count;
+  document.getElementById('gastosKpiMedia').textContent = fmtNum(media) + ' Kz';
+
+  const totalSaldo = SALDO_POR_TECNICO.reduce((s,t)=> s+t.saldoDisponivel, 0);
+  document.getElementById('gastosKpiSaldo').textContent = fmtNum(totalSaldo) + ' Kz';
+
+  if(SALDO_POR_TECNICO.length){
+    document.getElementById('gastosSaldoPanel').style.display = '';
+    document.getElementById('tabelaSaldoBody').innerHTML = SALDO_POR_TECNICO.map(t=>{
+      const barPct = t.totalSaldo > 0 ? Math.max(0, Math.min(100, (t.saldoDisponivel / t.totalSaldo)*100)) : 0;
+      const barColor = t.saldoDisponivel > 0 ? '#12A972' : '#DD4B5B';
+      return `<tr>
+        <td class="fw-semibold">${t.tecnicoNome}</td>
+        <td class="text-end">${fmtNum(t.totalSaldo)} Kz</td>
+        <td class="text-end">${fmtNum(t.totalGasto)} Kz</td>
+        <td class="text-end"><span style="color:${barColor};font-weight:600;">${fmtNum(t.saldoDisponivel)} Kz</span>
+          <div style="height:4px;background:var(--line);border-radius:2px;margin-top:3px;"><div style="height:100%;width:${barPct}%;background:${barColor};border-radius:2px;"></div></div>
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-success" onclick="openSaldoModalFor('${t.tecnicoId}')"><i class="bi bi-plus-lg"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  } else {
+    document.getElementById('gastosSaldoPanel').style.display = 'none';
+  }
+
+  const pgMeta = paginateSlice(list, 'gastos', 10);
+  renderPaginationBar('pgGastos','gastos', pgMeta, renderGastos);
+  list = pgMeta.slice;
+
+  const tbody = document.getElementById('tabelaGastosBody');
+  if(!list.length){
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-cash-stack" style="font-size:28px;"></i><div class="mt-2">Nenhum gasto registado</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(g=>{
+    const t = techById(g.tecnicoId);
+    const tipoChip = {'Formação':'chip-info','Reunião':'chip-warning','Apresentação do Sistema':'chip-purple','Outros':'chip-muted'}[g.tipo]||'chip-muted';
+    return `<tr style="cursor:pointer;" onclick="openGastoModal(${g.id})">
+      <td style="font-size:12.5px;">${fmtDatePt(g.data)}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          ${techFotoEl(t,24)}
+          <span style="font-size:13px;">${g.tecnicoNome||'-'}</span>
+        </div>
+      </td>
+      <td style="font-size:12.5px;">${g.escolaNome||'-'}</td>
+      <td><span class="chip ${tipoChip}" style="font-size:11px;">${g.tipo}</span></td>
+      <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(g.valor)} Kz</td>
+      <td style="font-size:12px; color:var(--ink-500); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.observacoes||''}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openGastoModal(${g.id})"><i class="bi bi-pencil"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openGastoModal(id){
+  populateGastosSelects();
+  if(!_schoolSelects['ssWrapGastoEscola']) initSchoolSelect('ssWrapGastoEscola','gastoEscolaId',{placeholder:'Selecionar escola / cliente...'});
+  editingGastoId = id || null;
+  document.getElementById('gastoForm').reset();
+  document.getElementById('gastoId').value = '';
+  document.getElementById('gastoData').value = iso(today);
+  _schoolSelects['ssWrapGastoEscola'].__setValue(null);
+  document.getElementById('gastoSaldoInfo').style.display = 'none';
+  document.getElementById('gastoDeleteBtn').classList.add('d-none');
+  document.getElementById('gastoSaveBtn').innerHTML = 'Guardar gasto';
+  document.getElementById('gastoModalTitle').innerHTML = '<i class="bi bi-cash-stack me-1"></i>Novo Gasto de Logística';
+
+  document.getElementById('gastoTecnico').onchange = function(){
+    const tid = this.value;
+    if(tid){
+      const saldo = SALDO_POR_TECNICO.find(s=>String(s.tecnicoId)===String(tid));
+      const disp = saldo ? saldo.saldoDisponivel : 0;
+      document.getElementById('gastoSaldoInfo').style.display = '';
+      document.getElementById('gastoSaldoDisplay').textContent = fmtNum(disp);
+    } else {
+      document.getElementById('gastoSaldoInfo').style.display = 'none';
+    }
+  };
+
+  if(id){
+    const g = GASTOS.find(x=>x.id===id);
+    if(g){
+      document.getElementById('gastoModalTitle').innerHTML = '<i class="bi bi-cash-stack me-1"></i>Editar Gasto de Logística';
+      document.getElementById('gastoId').value = g.id;
+      document.getElementById('gastoTecnico').value = g.tecnicoId||'';
+      _schoolSelects['ssWrapGastoEscola'].__setValue(g.escolaId||null);
+      document.getElementById('gastoTipo').value = g.tipo;
+      document.getElementById('gastoValor').value = g.valor;
+      document.getElementById('gastoData').value = g.data;
+      document.getElementById('gastoObservacoes').value = g.observacoes||'';
+      document.getElementById('gastoDeleteBtn').classList.remove('d-none');
+      document.getElementById('gastoSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar gasto';
+      document.getElementById('gastoTecnico').dispatchEvent(new Event('change'));
+    }
+  }
+  gastoModal.show();
+}
+
+function openSaldoModal(){
+  populateGastosSelects();
+  document.getElementById('saldoForm').reset();
+  document.getElementById('saldoData').value = iso(today);
+  saldoModal.show();
+}
+function openSaldoModalFor(techId){
+  populateGastosSelects();
+  document.getElementById('saldoForm').reset();
+  document.getElementById('saldoData').value = iso(today);
+  document.getElementById('saldoTecnico').value = techId;
+  saldoModal.show();
+}
+
+document.getElementById('gastoSaveBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('gastoSaveBtn');
+  const isEdit = !!editingGastoId;
+  try{
+    const tecnicoId = document.getElementById('gastoTecnico').value;
+    const tipo = document.getElementById('gastoTipo').value;
+    const valor = parseFloat(document.getElementById('gastoValor').value);
+    if(!tecnicoId){ showToast('Selecione o técnico.','warning'); return; }
+    if(!tipo){ showToast('Selecione o tipo de gasto.','warning'); return; }
+    if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
+    const data = {
+      tecnicoId: Number(tecnicoId),
+      escolaId: document.getElementById('gastoEscolaId').value ? Number(document.getElementById('gastoEscolaId').value) : null,
+      tipo, valor,
+      data: document.getElementById('gastoData').value || iso(today),
+      observacoes: document.getElementById('gastoObservacoes').value.trim(),
+    };
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
+    if(isEdit){
+      await apiPut('/gastos-logistica/'+editingGastoId, data);
+    } else {
+      await apiPost('/gastos-logistica', data);
+    }
+    gastoModal.hide();
+    await loadAllData();
+    renderGastos();
+    showToast(isEdit ? 'Gasto atualizado com sucesso.' : 'Gasto registado com sucesso.', 'success');
+  }catch(e){ console.error('Erro ao guardar gasto:', e); showToast(e.message||'Erro ao guardar gasto.','error'); }
+  finally{ btn.disabled = false; btn.innerHTML = isEdit ? '<i class="bi bi-check-lg me-1"></i>Atualizar gasto' : 'Guardar gasto'; }
+});
+
+document.getElementById('gastoDeleteBtn').addEventListener('click', async ()=>{
+  try{
+    if(!editingGastoId) return;
+    if(!confirm('Remover este gasto?')) return;
+    await apiDelete('/gastos-logistica/'+editingGastoId);
+    gastoModal.hide();
+    await loadAllData();
+    renderGastos();
+    showToast('Gasto removido com sucesso.', 'success');
+  }catch(e){ console.error('Erro ao remover gasto:', e); showToast('Erro ao remover gasto: '+e.message,'error'); }
+});
+
+document.getElementById('gastoModal').addEventListener('hidden.bs.modal', ()=>{ editingGastoId = null; });
+
+document.getElementById('saldoSaveBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('saldoSaveBtn');
+  try{
+    const tecnicoId = document.getElementById('saldoTecnico').value;
+    const valor = parseFloat(document.getElementById('saldoValor').value);
+    if(!tecnicoId){ showToast('Selecione o técnico.','warning'); return; }
+    if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A adicionar...';
+    await apiPost('/saldo-logistica', {
+      tecnicoId: Number(tecnicoId),
+      valor,
+      data: document.getElementById('saldoData').value || iso(today),
+      descricao: document.getElementById('saldoDescricao').value.trim(),
+    });
+    saldoModal.hide();
+    await loadAllData();
+    renderGastos();
+    showToast('Saldo adicionado com sucesso.', 'success');
+  }catch(e){ console.error('Erro ao adicionar saldo:', e); showToast(e.message||'Erro ao adicionar saldo.','error'); }
+  finally{ btn.disabled = false; btn.innerHTML = 'Adicionar saldo'; }
+});
+
+['gastosSearch','gastosFilterTipo','gastosFilterTecnico'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderGastos);
+  document.getElementById(id).addEventListener('change', renderGastos);
+});
+
+function pdfGastos(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','mm','a4');
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), MR=14;
+  doc.setFillColor(255,255,255); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(88,80,236); doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text('Gastos de Logística — Relatório', MR, 12);
+  doc.setFontSize(8); doc.text('Gerado em: '+fmtDatePt(iso(today)), MR, 19);
+  doc.setFontSize(9); doc.text('Total: '+fmtNum(GASTOS.reduce((s,g)=>s+g.valor,0))+' Kz', W-MR, 19, {align:'right'});
+  const rows = GASTOS.map(g=>[fmtDatePt(g.data), g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||'']);
+  doc.autoTable({
+    startY:34, head:[['Data','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
+    styles:{fontSize:8,cellPadding:3}, headStyles:{fillColor:[88,80,236],textColor:255},
+    alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:MR},
+  });
+  doc.save('Gastos_Logistica_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
+}
+
+/* =========================================================================
    AUSÊNCIAS — widget do dashboard, modal de lista e calendário
 ========================================================================= */
 function renderAusenciasWidget(){
@@ -4747,6 +5203,7 @@ function refreshAll(){
   if(document.getElementById('view-planos').classList.contains('active')) safe(renderPlanosHistorico, 'renderPlanosHistorico');
   if(document.getElementById('view-disponibilidade').classList.contains('active')) safe(renderDisponibilidade, 'renderDisponibilidade');
   if(document.getElementById('view-reunioes').classList.contains('active')) safe(renderReunioes, 'renderReunioes');
+  if(document.getElementById('view-gastos').classList.contains('active')) safe(renderGastos, 'renderGastos');
 }
 initGlobalSearchSelects();
 loadAllData().then(()=> refreshAll()).catch(err=> { console.error('Failed to load data:', err); refreshAll(); });
