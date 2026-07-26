@@ -17,21 +17,27 @@ router.get('/', async (req, res, next) => {
       tipo: r.tipo, valor: Number(r.valor), data: r.data,
       observacoes: r.observacoes, criadoEm: r.criado_em,
     })));
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
+    next(err);
+  }
 });
 
 router.get('/resumo', async (req, res, next) => {
   try {
-    const porTipo = await query(`
-      SELECT tipo, SUM(valor) as total, COUNT(*) as cnt
-      FROM gastos_logistica GROUP BY tipo ORDER BY total DESC
-    `);
-    const porTecnico = await query(`
-      SELECT t.nome, g.tecnico_id, SUM(g.valor) as total
-      FROM gastos_logistica g JOIN tecnicos t ON t.id=g.tecnico_id
-      GROUP BY g.tecnico_id, t.nome ORDER BY total DESC
-    `);
-    const total = await queryOne('SELECT SUM(valor) as total, COUNT(*) as cnt FROM gastos_logistica');
+    let porTipo = [], porTecnico = [], total = { total: 0, cnt: 0 };
+    try {
+      porTipo = await query(`
+        SELECT tipo, SUM(valor) as total, COUNT(*) as cnt
+        FROM gastos_logistica GROUP BY tipo ORDER BY total DESC
+      `);
+      porTecnico = await query(`
+        SELECT t.nome, g.tecnico_id, SUM(g.valor) as total
+        FROM gastos_logistica g JOIN tecnicos t ON t.id=g.tecnico_id
+        GROUP BY g.tecnico_id, t.nome ORDER BY total DESC
+      `);
+      total = await queryOne('SELECT SUM(valor) as total, COUNT(*) as cnt FROM gastos_logistica');
+    } catch (_) {}
     res.json({
       total: Number(total?.total || 0),
       count: Number(total?.cnt || 0),

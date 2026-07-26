@@ -8,17 +8,27 @@ router.get('/', async (req, res, next) => {
     res.json(rows.map(r => ({
       id: r.id, valor: r.valor, descricao: r.descricao, data: r.data, criadoEm: r.criado_em,
     })));
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
+    next(err);
+  }
 });
 
 router.get('/global', async (req, res, next) => {
   try {
-    const saldo = await queryOne('SELECT COALESCE(SUM(valor), 0) as total FROM saldo_logistica');
-    const gastos = await queryOne('SELECT COALESCE(SUM(valor), 0) as total FROM gastos_logistica');
+    let totalSaldo = 0, totalGasto = 0;
+    try {
+      const saldo = await queryOne('SELECT COALESCE(SUM(valor), 0) as total FROM saldo_logistica');
+      totalSaldo = Number(saldo?.total || 0);
+    } catch (_) {}
+    try {
+      const gastos = await queryOne('SELECT COALESCE(SUM(valor), 0) as total FROM gastos_logistica');
+      totalGasto = Number(gastos?.total || 0);
+    } catch (_) {}
     res.json({
-      totalSaldo: Number(saldo?.total || 0),
-      totalGasto: Number(gastos?.total || 0),
-      saldoDisponivel: Number(saldo?.total || 0) - Number(gastos?.total || 0),
+      totalSaldo,
+      totalGasto,
+      saldoDisponivel: totalSaldo - totalGasto,
     });
   } catch (err) { next(err); }
 });
