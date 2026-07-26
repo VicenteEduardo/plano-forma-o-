@@ -785,7 +785,6 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           </select>
           <button class="btn btn-soft btn-sm avail-trigger-btn" onclick="openAvailabilityModal()"><i class="bi bi-search me-1"></i>Verificar disponibilidade</button>
           <button class="btn btn-outline-secondary btn-sm avail-trigger-btn" onclick="openNotasModal()"><i class="bi bi-sticky me-1"></i>Notas &amp; observações</button>
-          <button class="btn btn-outline-danger btn-sm avail-trigger-btn" onclick="openOcorrenciaModal()"><i class="bi bi-exclamation-octagon me-1"></i>Nova ocorrência</button>
           <span class="ms-auto chip chip-muted" id="evtCount">0 eventos</span>
         </div>
         <div class="panel p-0">
@@ -1950,6 +1949,36 @@ function eventsForTech(techId, fromISO, toISO){
     tecnicoId: r.tecnicoId, tipo: 'Reunião',
   })), ...planos];
 }
+function checkTechConflict(techId, dateISO, hi, hf, excludeEventType, excludeEventId){
+  const tid = Number(techId);
+  const newStart = timeToMin(hi), newEnd = timeToMin(hf);
+  const conflicts = [];
+  if(newEnd <= newStart) return conflicts;
+  EVENTOS.forEach(e=>{
+    if(isTechAssignedToEvent(tid, e) && e.data===dateISO && e.estado!=='Cancelado'){
+      if(excludeEventType==='evento' && excludeEventId && e.id===excludeEventId) return;
+      const eS=timeToMin(e.horaInicio), eF=timeToMin(e.horaFim);
+      if(newStart<eF && newEnd>eS) conflicts.push({tipo:'Evento', titulo:e.titulo||'Sem título', hora:`${e.horaInicio}-${e.horaFim}`});
+    }
+  });
+  REUNIOES.forEach(r=>{
+    if(isTechAssignedToReuniao(tid, r) && r.data===dateISO && r.estado!=='Cancelada'){
+      if(excludeEventType==='reuniao' && excludeEventId && r.id===excludeEventId) return;
+      const rS=timeToMin(r.horaInicio), rF=timeToMin(r.horaFim);
+      if(newStart<rF && newEnd>rS) conflicts.push({tipo:'Reunião', titulo:r.titulo||'Sem título', hora:`${r.horaInicio}-${r.horaFim}`});
+    }
+  });
+  PLANOS_FORMACAO.forEach(p=>{
+    (p.linhas||[]).forEach(l=>{
+      if(l.tecnicoId===tid && l.data===dateISO){
+        const pHora=l.hora||'09:00', pMin=parseDuracaoMin(l.duracao);
+        const pS=timeToMin(pHora), pF=pS+pMin;
+        if(newStart<pF && newEnd>pS) conflicts.push({tipo:'Formação', titulo:l.objetivo||p.nome||'Sem título', hora:`${pHora} (${l.duracao||'1h'})`});
+      }
+    });
+  });
+  return conflicts;
+}
 function occupiedMinutes(techId, dateISO){
   const evtMin = EVENTOS.filter(e=> isTechAssignedToEvent(techId, e) && e.data===dateISO && e.estado!=='Cancelado')
     .reduce((sum,e)=> sum + Math.max(0, timeToMin(e.horaFim)-timeToMin(e.horaInicio)), 0);
@@ -2692,6 +2721,19 @@ document.getElementById('evtSaveBtn').addEventListener('click', async ()=>{
     const tecnicoId = Number(document.getElementById('evtTecnico').value);
     if(!titulo || !data || !hi || !hf || !tecnicoId){ showToast('Preencha os campos obrigatórios: título, data, horas e técnico.','warning'); return; }
     if(timeToMin(hf) <= timeToMin(hi)){ showToast('A hora de fim deve ser posterior à hora de início.','warning'); return; }
+    const tech = techById(tecnicoId);
+    if(tech){
+      const techStart=timeToMin(tech.horaInicio), techEnd=timeToMin(tech.horaFim);
+      if(timeToMin(hi)<techStart || timeToMin(hf)>techEnd){
+        showToast(`Horário fora do expediente do técnico ${tech.nome} (${tech.horaInicio}-${tech.horaFim}).`,'warning'); return;
+      }
+    }
+    const editingEvtId = document.getElementById('evtId').value || null;
+    const conflitos = checkTechConflict(tecnicoId, data, hi, hf, 'evento', editingEvtId ? Number(editingEvtId) : null);
+    if(conflitos.length){
+      const detalhes = conflitos.map(c=>`• ${c.tipo}: ${c.titulo} (${c.hora})`).join('\n');
+      showToast(`Conflito de horário detectado!\n${detalhes}`,'warning'); return;
+    }
 
     const evtEscolaIdVal = document.getElementById('evtEscolaId').value;
     const payload = {
@@ -2771,7 +2813,7 @@ function renderEventosTable(){
   tbody.innerHTML = list.map(e=>{
     const t = techById(e.tecnicoId);
     const esc = e.escolaId ? escolaById(e.escolaId) : null;
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="openEventModal(${e.id})">
       <td class="fw-semibold">${fmtDatePt(e.data)}</td>
       <td>${e.horaInicio} - ${e.horaFim}</td>
       <td>
@@ -2792,8 +2834,8 @@ function renderEventosTable(){
       <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${e.observacoes||''}">${e.observacoes||'—'}</td>
       <td class="text-end">
         ${prioridadeDot(e.prioridade)}
-        <button class="btn btn-sm btn-light border ms-2" onclick="openEventModal(${e.id})"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-light border" onclick="quickDeleteEvent(${e.id})"><i class="bi bi-trash text-danger"></i></button>
+        <button class="btn btn-sm btn-light border ms-2" onclick="event.stopPropagation(); openEventModal(${e.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); quickDeleteEvent(${e.id})"><i class="bi bi-trash text-danger"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -3612,6 +3654,18 @@ document.getElementById('planoSaveBtn').addEventListener('click', async ()=>{
   try{
     const dados = coletarDadosPlano();
     if(!dados.escolaId){ showToast('Indica a escola/cliente do plano.','warning'); return; }
+    const allConflicts = [];
+    dados.linhas.forEach(l=>{
+      if(!l.tecnicoId || !l.data) return;
+      const hora = l.hora||'09:00';
+      const dur = parseDuracaoMin(l.duracao);
+      const fimMin = timeToMin(hora)+dur;
+      const hfStr = Math.floor(fimMin/60)+':'+String(fimMin%60).padStart(2,'0');
+      const c = checkTechConflict(l.tecnicoId, l.data, hora, hfStr, 'plano', editingPlanoId);
+      const tech = techById(l.tecnicoId);
+      c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora}) em ${fmtDatePt(l.data)}`));
+    });
+    if(allConflicts.length){ showToast('Conflitos de horário detectados:\n'+allConflicts.join('\n'),'warning'); return; }
     if(editingPlanoId){
       await apiPut('/planos/'+editingPlanoId, dados);
     } else {
@@ -3857,7 +3911,7 @@ try{
   list = meta.slice;
   tbody.innerHTML = list.map(p=>{
     const resp = p.responsavelId ? techById(p.responsavelId) : null;
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="openPlanoFormacaoModal(${p.id})">
       <td>${escolaMiniHtml(p.escolaId)}</td>
       <td class="fw-semibold">${p.titulo||'—'}</td>
       <td>${fmtDatePt(p.criadoEm)}</td>
@@ -3867,9 +3921,9 @@ try{
       <td><span class="chip chip-muted">${p.versao||'v1.0'}</span></td>
       <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.observacoes||''}">${p.observacoes||'—'}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-light border" title="Editar" onclick="openPlanoFormacaoModal(${p.id})"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-light border" title="Gerar PDF" onclick="regenerarPlanoPDF(${p.id})"><i class="bi bi-file-earmark-pdf text-danger"></i></button>
-        <button class="btn btn-sm btn-light border" title="Remover" onclick="removerPlanoHistorico(${p.id})"><i class="bi bi-trash text-danger"></i></button>
+        <button class="btn btn-sm btn-light border" title="Editar" onclick="event.stopPropagation(); openPlanoFormacaoModal(${p.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-light border" title="Gerar PDF" onclick="event.stopPropagation(); regenerarPlanoPDF(${p.id})"><i class="bi bi-file-earmark-pdf text-danger"></i></button>
+        <button class="btn btn-sm btn-light border" title="Remover" onclick="event.stopPropagation(); removerPlanoHistorico(${p.id})"><i class="bi bi-trash text-danger"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -3969,13 +4023,13 @@ try{
   renderPaginationBar('pgDisponibilidade','disponibilidade', meta, renderDisponibilidade);
   const pageRows = meta.slice;
   tbody.innerHTML = pageRows.map(r=>`
-    <tr>
+    <tr style="cursor:pointer;" ${r.proxCompromisso ? `onclick="openEventModal(${r.proxCompromisso.id})"` : ''}>
       <td><div class="d-flex align-items-center gap-2">${techFotoEl(r.t,28)}<div><div class="fw-semibold" style="font-size:13px;">${r.t.nome}</div><div style="font-size:11px; color:var(--ink-500);">${r.t.equipa||'—'}</div></div></div></td>
       <td>${r.statusChip}</td>
       <td>${r.indisponivel? '—' : fmtHoras(r.stats.livreMin)}</td>
       <td>${r.proxCompromisso? (()=>{
         const pEsc = r.proxCompromisso.escolaId ? escolaById(r.proxCompromisso.escolaId) : null;
-        return `<span style="cursor:pointer;" onclick="openEventModal(${r.proxCompromisso.id})"><div class="d-flex align-items-center gap-1">${pEsc ? `<img src="${escolaLogo(pEsc)}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;border:1px solid var(--line);" onerror="escolaImgOnError(this,escolaById(${pEsc.id}))">` : ''}<span>${fmtDatePt(r.proxCompromisso.data)} · ${r.proxCompromisso.horaInicio}</span></div></span>`;
+        return `<span onclick="event.stopPropagation(); openEventModal(${r.proxCompromisso.id})"><div class="d-flex align-items-center gap-1">${pEsc ? `<img src="${escolaLogo(pEsc)}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;border:1px solid var(--line);" onerror="escolaImgOnError(this,escolaById(${pEsc.id}))">` : ''}<span>${fmtDatePt(r.proxCompromisso.data)} · ${r.proxCompromisso.horaInicio}</span></div></span>`;
       })() : '<span class="text-muted">Sem compromissos</span>'}</td>
     </tr>`).join('');
 }catch(e){ console.error('renderDisponibilidade:', e); }
@@ -4079,11 +4133,14 @@ document.getElementById('reuSaveBtn').addEventListener('click', async ()=>{
     if(!direcaoEscola){ showToast('Indica pelo menos um membro da direção da escola.','warning'); return; }
     if(!direcaoEduall){ showToast('Indica pelo menos um membro da direção da Eduall.','warning'); return; }
     if(!dISO){ showToast('Indica a data da reunião.','warning'); return; }
+    const reuHI = document.getElementById('reuHoraInicio').value || '09:00';
+    const reuHF = document.getElementById('reuHoraFim').value || '10:00';
+    if(timeToMin(reuHF) <= timeToMin(reuHI)){ showToast('A hora de fim deve ser posterior à hora de início.','warning'); return; }
 
     const payload = {
       escolaId: Number(escolaIdVal), data:dISO,
-      horaInicio: document.getElementById('reuHoraInicio').value || '09:00',
-      horaFim: document.getElementById('reuHoraFim').value || '10:00',
+      horaInicio: reuHI,
+      horaFim: reuHF,
       estado: document.getElementById('reuEstado').value,
       direcaoEscola, direcaoEduall,
       administracaoEduall: document.getElementById('reuAdministracaoEduall').value.trim(),
@@ -4096,6 +4153,14 @@ document.getElementById('reuSaveBtn').addEventListener('click', async ()=>{
       notas: document.getElementById('reuNotas').value.trim(),
       proximosPassos: document.getElementById('reuProximosPassos').value.trim(),
     };
+    if(payload.tecnicoId){
+      const c = checkTechConflict(payload.tecnicoId, dISO, payload.horaInicio, payload.horaFim, 'reuniao', editingReuniaoId);
+      if(c.length){
+        const tech = techById(payload.tecnicoId);
+        const detalhes = c.map(x=>`• ${x.tipo}: ${x.titulo} (${x.hora})`).join('\n');
+        showToast(`Conflito de horário para ${tech?tech.nome:'o técnico'}!\n${detalhes}`,'warning'); return;
+      }
+    }
     if(editingReuniaoId){
       await apiPut('/reunioes/'+editingReuniaoId, payload);
     } else {
@@ -4145,15 +4210,15 @@ function renderReunioes(){
   tbody.innerHTML = list.map(r=>{
     const t = r.tecnicoId ? techById(r.tecnicoId) : null;
     const participantes = [r.direcaoEscola, r.direcaoEduall, r.administracaoEduall, t?('Técnico: '+t.nome):null].filter(Boolean).join(' · ');
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="openReuniaoModal(${r.id})">
       <td>${escolaMiniHtml(r.escolaId)}</td>
       <td class="fw-semibold">${fmtDatePt(r.data)}<div style="font-size:11px; color:var(--ink-500);">${r.horaInicio} - ${r.horaFim}</div></td>
       <td>${reuEstadoChip(r.estado)}</td>
       <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${participantes}">${participantes||'—'}</td>
       <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.proximosPassos||''}">${r.proximosPassos||'—'}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-light border" onclick="openReuniaoModal(${r.id})"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-light border" onclick="removerReuniao(${r.id})"><i class="bi bi-trash text-danger"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openReuniaoModal(${r.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); removerReuniao(${r.id})"><i class="bi bi-trash text-danger"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -4244,7 +4309,7 @@ function renderAusenciasList(){
   tbody.innerHTML = list.map(a=>{
     const t = techById(a.tecnicoId);
     const diasRestantes = a.fim>=hojeISO ? Math.max(0, Math.round((new Date(a.fim+'T00:00:00') - new Date(hojeISO+'T00:00:00'))/86400000)) : 0;
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="openAusenciaModal(${a.id})">
       <td><div class="d-flex align-items-center gap-2">${t?techFotoEl(t,26):'<div class="avatar" style="width:26px;height:26px;font-size:10px;background:var(--ink-100);">?</div>'}${t?t.nome:'—'}</div></td>
       <td><span class="type-badge" style="background:${absenceHex(a.tipo)};">${a.tipo}${a.meioDia?' · meio-dia':''}</span></td>
       <td>${fmtDatePt(a.inicio)}</td>
@@ -4253,8 +4318,8 @@ function renderAusenciasList(){
       <td>${ausEstadoChip(a.estado)}</td>
       <td style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${a.observacoes||''}">${a.observacoes||a.motivo||'—'}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-light border" onclick="openAusenciaModal(${a.id})"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-light border" onclick="removerAusencia(${a.id})"><i class="bi bi-trash text-danger"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openAusenciaModal(${a.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); removerAusencia(${a.id})"><i class="bi bi-trash text-danger"></i></button>
       </td>
     </tr>`;
   }).join('');
