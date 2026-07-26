@@ -937,6 +937,11 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 
       <section class="section-view" id="view-gastos">
         <div class="filter-bar">
+          <select class="form-select" id="gastosFilterCategoria" style="max-width:180px;">
+            <option value="todos">Todas as categorias</option>
+            <option value="tecnicos">Técnicos</option>
+            <option value="comerciais">Comerciais</option>
+          </select>
           <input type="text" class="form-control" id="gastosSearch" placeholder="Pesquisar...">
           <select class="form-select" id="gastosFilterTipo">
             <option value="todos">Todos os tipos</option>
@@ -979,6 +984,32 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           </div>
         </div>
         <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E3F2FD;color:#1565C0;"><i class="bi bi-people"></i></div>
+              <div><div class="kpi-value" id="gastosKpiSaldoTec">0</div><div class="kpi-label">Saldo Técnicos</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#F3E5F5;color:#7B1FA2;"><i class="bi bi-people-fill"></i></div>
+              <div><div class="kpi-value" id="gastosKpiSaldoCom">0</div><div class="kpi-label">Saldo Comerciais</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E8F5E9;color:#2E7D32;"><i class="bi bi-wallet2"></i></div>
+              <div><div class="kpi-value" id="gastosKpiGastoTec">0</div><div class="kpi-label">Gastos Técnicos</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#F3E5F5;color:#7B1FA2;"><i class="bi bi-wallet2"></i></div>
+              <div><div class="kpi-value" id="gastosKpiGastoCom">0</div><div class="kpi-label">Gastos Comerciais</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
           <div class="col-md-4">
             <div class="panel" style="padding:18px 20px;">
               <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-pie-chart me-1 text-primary"></i>Gastos por Tipo</div>
@@ -998,12 +1029,47 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </div>
           </div>
         </div>
+        <div class="panel p-0 mb-3">
+          <div class="panel-header d-flex align-items-center justify-content-between" style="padding:14px 18px; cursor:pointer;" onclick="document.getElementById('saldoHistoricoBody').classList.toggle('d-none'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-up');">
+            <div class="fw-bold" style="font-size:13.5px;"><i class="bi bi-wallet2 me-2 text-success"></i>Histórico de Saldos</div>
+            <i class="bi bi-chevron-up" style="font-size:12px; color:var(--ink-500);"></i>
+          </div>
+          <div id="saldoHistoricoBody" class="d-none" style="border-top:1px solid var(--line);">
+            <div class="p-3">
+              <div class="d-flex gap-2 mb-3 flex-wrap">
+                <select class="form-select form-select-sm" id="saldoHistFilterCategoria" style="max-width:160px;">
+                  <option value="todos">Todas as categorias</option>
+                  <option value="tecnicos">Técnicos</option>
+                  <option value="comerciais">Comerciais</option>
+                </select>
+                <input type="date" class="form-control form-control-sm" id="saldoHistFilterDe" title="Data de" style="max-width:150px;">
+                <input type="date" class="form-control form-control-sm" id="saldoHistFilterAte" title="Data até" style="max-width:150px;">
+                <button class="btn btn-outline-secondary btn-sm" onclick="limparFiltrosSaldo()" title="Limpar"><i class="bi bi-x-lg"></i></button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-modern mb-0" style="font-size:13px;">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th class="text-end">Valor (Kz)</th>
+                      <th>Descrição</th>
+                      <th class="text-end">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="saldoHistoricoTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="panel p-0">
           <div class="table-responsive">
             <table class="table table-modern mb-0">
               <thead>
                 <tr>
                   <th>Data</th>
+                  <th>Categoria</th>
                   <th>Técnico</th>
                   <th>Escola</th>
                   <th>Tipo</th>
@@ -1806,11 +1872,18 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </div>
           </div>
           <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-4">
+              <label class="form-label">Categoria <span class="text-danger">*</span></label>
+              <select class="form-select" id="gastoCategoria" required>
+                <option value="tecnicos">Técnicos</option>
+                <option value="comerciais">Comerciais</option>
+              </select>
+            </div>
+            <div class="col-md-4">
               <label class="form-label">Técnico <span class="text-danger">*</span></label>
               <select class="form-select" id="gastoTecnico" required></select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Escola / Cliente</label>
               <div class="ss-control" id="ssWrapGastoEscola">
                 <input type="hidden" id="gastoEscolaId">
@@ -1857,14 +1930,21 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
         <div>
-          <h5 class="modal-title fw-bold mb-0"><i class="bi bi-wallet2 me-1 text-success"></i>Adicionar Saldo de Logística</h5>
-          <div style="font-size:12px; color:var(--ink-500);">Atribuir saldo global para despesas de campo da equipa</div>
+          <h5 class="modal-title fw-bold mb-0" id="saldoModalTitle"><i class="bi bi-wallet2 me-1 text-success"></i>Adicionar Saldo</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Atribuir saldo para despesas de campo</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body pt-2">
         <form id="saldoForm">
           <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Categoria <span class="text-danger">*</span></label>
+              <select class="form-select" id="saldoCategoria" required>
+                <option value="tecnicos">Técnicos</option>
+                <option value="comerciais">Comerciais</option>
+              </select>
+            </div>
             <div class="col-md-6">
               <label class="form-label">Valor (Kz) <span class="text-danger">*</span></label>
               <input type="number" class="form-control" id="saldoValor" min="0" step="0.01" required placeholder="0.00">
@@ -1873,7 +1953,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
               <label class="form-label">Data</label>
               <input type="date" class="form-control" id="saldoData">
             </div>
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label">Descrição</label>
               <input type="text" class="form-control" id="saldoDescricao" placeholder="Ex: Saldo mensal de julho">
             </div>
@@ -1881,6 +1961,8 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         </form>
       </div>
       <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-danger btn-sm d-none" id="saldoDeleteBtn"><i class="bi bi-trash me-1"></i>Remover</button>
+        <span class="ms-auto"></span>
         <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-success" id="saldoSaveBtn">Adicionar saldo</button>
       </div>
@@ -1910,7 +1992,7 @@ async function apiUpload(url, fieldName, fileOrFiles){
 }
 
 async function loadAllData(){
-  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo global'];
+  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo global','saldo entries'];
   let loaded = 0, dashRendered = false;
   const assign = [
     d => { ESCOLAS = d; },
@@ -1923,11 +2005,12 @@ async function loadAllData(){
     d => { OCORRENCIAS = d; },
     d => { GASTOS = d; },
     d => { SALDO_GLOBAL = d; },
+    d => { SALDO_ENTRIES = d; },
   ];
   const urls = [
     ESCOLAS.length ? null : '/escolas',
     '/tecnicos', '/eventos', '/ausencias', '/reunioes', '/planos', '/notas', '/ocorrencias',
-    '/gastos-logistica', '/saldo-logistica/global',
+    '/gastos-logistica', '/saldo-logistica/global', '/saldo-logistica',
   ];
   const finishOne = (i)=>{
     loaded++;
@@ -2369,9 +2452,14 @@ const pageMeta = {
 };
 document.querySelectorAll('.nav-pill').forEach(el=>{
   el.addEventListener('click', ()=>{
+    const view = el.dataset.view;
+    if(view==='gastos' && !window._gastosUnlocked){
+      const pwd = prompt('Digite a senha para aceder aos Gastos:');
+      if(pwd !== 'Eduall@2026'){ showToast('Senha incorreta.', 'error'); return; }
+      window._gastosUnlocked = true;
+    }
     document.querySelectorAll('.nav-pill').forEach(n=>n.classList.remove('active'));
     el.classList.add('active');
-    const view = el.dataset.view;
     document.querySelectorAll('.section-view').forEach(s=>s.classList.remove('active'));
     document.getElementById('view-'+view).classList.add('active');
     document.getElementById('pageTitle').textContent = pageMeta[view].title;
@@ -4728,6 +4816,8 @@ document.querySelectorAll('#view-reunioes .sortable').forEach(th=>{
 ========================================================================= */
 let gastosSortKey = 'data', gastosSortDir = -1;
 let editingGastoId = null;
+let editingSaldoId = null;
+let SALDO_ENTRIES = [];
 const gastoModal = new bootstrap.Modal(document.getElementById('gastoModal'));
 const saldoModal = new bootstrap.Modal(document.getElementById('saldoModal'));
 
@@ -4743,6 +4833,7 @@ function populateGastosSelects(){
 }
 
 function getGastosFiltrados(){
+  const fCat = document.getElementById('gastosFilterCategoria').value;
   const fTipo = document.getElementById('gastosFilterTipo').value;
   const fTecnico = document.getElementById('gastosFilterTecnico').value;
   const fEscola = document.getElementById('gastosFilterEscola').value;
@@ -4750,6 +4841,7 @@ function getGastosFiltrados(){
   const fAte = document.getElementById('gastosFilterAte').value;
   const search = (document.getElementById('gastosSearch').value||'').toLowerCase();
   return GASTOS.filter(g=>{
+    if(fCat!=='todos' && (g.categoria||'tecnicos')!==fCat) return false;
     if(fTipo!=='todos' && g.tipo!==fTipo) return false;
     if(fTecnico!=='todos' && String(g.tecnicoId)!==String(fTecnico)) return false;
     if(fEscola!=='todos' && String(g.escolaId)!==String(fEscola)) return false;
@@ -4801,6 +4893,11 @@ function renderGastosAnalytics(list){
   }).join('') : '<div class="text-muted" style="font-size:12px;">Sem dados</div>';
 }
 
+function getSaldoDispFor(cat){
+  if(SALDO_GLOBAL[cat]) return SALDO_GLOBAL[cat].saldoDisponivel;
+  return 0;
+}
+
 function renderGastos(){
   populateGastosSelects();
   const list = getGastosFiltrados();
@@ -4818,9 +4915,17 @@ function renderGastos(){
   document.getElementById('gastosKpiTotal').textContent = fmtNum(total) + ' Kz';
   document.getElementById('gastosKpiCount').textContent = count;
   document.getElementById('gastosKpiMedia').textContent = fmtNum(media) + ' Kz';
-  document.getElementById('gastosKpiSaldo').textContent = fmtNum(SALDO_GLOBAL.saldoDisponivel) + ' Kz';
+  const totalDisp = (SALDO_GLOBAL.total||SALDO_GLOBAL).saldoDisponivel || 0;
+  document.getElementById('gastosKpiSaldo').textContent = fmtNum(totalDisp) + ' Kz';
+  document.getElementById('gastosKpiSaldoTec').textContent = fmtNum(getSaldoDispFor('tecnicos')) + ' Kz';
+  document.getElementById('gastosKpiSaldoCom').textContent = fmtNum(getSaldoDispFor('comerciais')) + ' Kz';
+  const gastosTec = GASTOS.filter(g=>(g.categoria||'tecnicos')==='tecnicos').reduce((s,g)=>s+g.valor,0);
+  const gastosCom = GASTOS.filter(g=>g.categoria==='comerciais').reduce((s,g)=>s+g.valor,0);
+  document.getElementById('gastosKpiGastoTec').textContent = fmtNum(gastosTec) + ' Kz';
+  document.getElementById('gastosKpiGastoCom').textContent = fmtNum(gastosCom) + ' Kz';
 
   renderGastosAnalytics(list);
+  renderSaldoHistorico();
 
   const pgMeta = paginateSlice(list, 'gastos', 10);
   renderPaginationBar('pgGastos','gastos', pgMeta, renderGastos);
@@ -4828,14 +4933,16 @@ function renderGastos(){
 
   const tbody = document.getElementById('tabelaGastosBody');
   if(!page.length){
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-cash-stack" style="font-size:28px;"></i><div class="mt-2">Nenhum gasto registado</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted"><i class="bi bi-cash-stack" style="font-size:28px;"></i><div class="mt-2">Nenhum gasto registado</div></td></tr>`;
     return;
   }
   tbody.innerHTML = page.map(g=>{
     const t = techById(g.tecnicoId);
     const tipoChip = {'Formação':'chip-info','Reunião':'chip-warning','Apresentação do Sistema':'chip-purple','Outros':'chip-muted'}[g.tipo]||'chip-muted';
+    const catLabel = g.categoria==='comerciais' ? '<span class="chip" style="background:#F3E5F5;color:#7B1FA2;font-size:10px;">Comercial</span>' : '<span class="chip" style="background:#E3F2FD;color:#1565C0;font-size:10px;">Técnico</span>';
     return `<tr style="cursor:pointer;" onclick="openGastoModal(${g.id})">
       <td style="font-size:12.5px;">${fmtDatePt(g.data)}</td>
+      <td>${catLabel}</td>
       <td>
         <div class="d-flex align-items-center gap-2">
           ${techFotoEl(t,24)}
@@ -4854,6 +4961,7 @@ function renderGastos(){
 }
 
 function limparFiltrosGastos(){
+  document.getElementById('gastosFilterCategoria').value = 'todos';
   document.getElementById('gastosSearch').value = '';
   document.getElementById('gastosFilterTipo').value = 'todos';
   document.getElementById('gastosFilterTecnico').value = 'todos';
@@ -4861,6 +4969,54 @@ function limparFiltrosGastos(){
   document.getElementById('gastosFilterDe').value = '';
   document.getElementById('gastosFilterAte').value = '';
   renderGastos();
+}
+
+/* --- Saldo History --- */
+function renderSaldoHistorico(){
+  const fCat = document.getElementById('saldoHistFilterCategoria').value;
+  const fDe = document.getElementById('saldoHistFilterDe').value;
+  const fAte = document.getElementById('saldoHistFilterAte').value;
+  let list = [...SALDO_ENTRIES];
+  if(fCat!=='todos') list = list.filter(s=>s.categoria===fCat);
+  if(fDe) list = list.filter(s=>s.data>=fDe);
+  if(fAte) list = list.filter(s=>s.data<=fAte);
+  const tbody = document.getElementById('saldoHistoricoTable');
+  if(!list.length){
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-muted"><i class="bi bi-wallet2" style="font-size:22px;"></i><div class="mt-1">Nenhuma entrada de saldo</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(s=>{
+    const catLabel = s.categoria==='comerciais'
+      ? '<span class="chip" style="background:#F3E5F5;color:#7B1FA2;font-size:10px;">Comercial</span>'
+      : '<span class="chip" style="background:#E3F2FD;color:#1565C0;font-size:10px;">Técnico</span>';
+    return `<tr style="cursor:pointer;" onclick="openSaldoModalEdit(${s.id})">
+      <td style="font-size:12.5px;">${fmtDatePt(s.data)}</td>
+      <td>${catLabel}</td>
+      <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(s.valor)} Kz</td>
+      <td style="font-size:12px; color:var(--ink-500);">${s.descricao||'-'}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openSaldoModalEdit(${s.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteSaldoEntry(${s.id})" title="Remover"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function limparFiltrosSaldo(){
+  document.getElementById('saldoHistFilterCategoria').value = 'todos';
+  document.getElementById('saldoHistFilterDe').value = '';
+  document.getElementById('saldoHistFilterAte').value = '';
+  renderSaldoHistorico();
+}
+
+async function deleteSaldoEntry(id){
+  if(!confirm('Remover esta entrada de saldo?')) return;
+  try{
+    await apiDelete('/saldo-logistica/'+id);
+    await loadAllData();
+    renderGastos();
+    showToast('Saldo removido com sucesso.', 'success');
+  }catch(e){ showToast(e.message||'Erro ao remover saldo.','error'); }
 }
 
 function openGastoModal(id){
@@ -4876,9 +5032,10 @@ function openGastoModal(id){
   document.getElementById('gastoSaveBtn').innerHTML = 'Guardar gasto';
   document.getElementById('gastoModalTitle').innerHTML = '<i class="bi bi-cash-stack me-1"></i>Novo Gasto de Logística';
 
-  document.getElementById('gastoTecnico').onchange = function(){
+  document.getElementById('gastoCategoria').onchange = function(){
+    const cat = this.value;
     document.getElementById('gastoSaldoInfo').style.display = '';
-    document.getElementById('gastoSaldoDisplay').textContent = fmtNum(SALDO_GLOBAL.saldoDisponivel);
+    document.getElementById('gastoSaldoDisplay').textContent = fmtNum(getSaldoDispFor(cat));
   };
 
   if(id){
@@ -4886,6 +5043,7 @@ function openGastoModal(id){
     if(g){
       document.getElementById('gastoModalTitle').innerHTML = '<i class="bi bi-cash-stack me-1"></i>Editar Gasto de Logística';
       document.getElementById('gastoId').value = g.id;
+      document.getElementById('gastoCategoria').value = g.categoria||'tecnicos';
       document.getElementById('gastoTecnico').value = g.tecnicoId||'';
       _schoolSelects['ssWrapGastoEscola'].__setValue(g.escolaId||null);
       document.getElementById('gastoTipo').value = g.tipo;
@@ -4894,15 +5052,34 @@ function openGastoModal(id){
       document.getElementById('gastoObservacoes').value = g.observacoes||'';
       document.getElementById('gastoDeleteBtn').classList.remove('d-none');
       document.getElementById('gastoSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar gasto';
-      document.getElementById('gastoTecnico').dispatchEvent(new Event('change'));
+      document.getElementById('gastoCategoria').dispatchEvent(new Event('change'));
     }
   }
   gastoModal.show();
 }
 
 function openSaldoModal(){
+  editingSaldoId = null;
   document.getElementById('saldoForm').reset();
   document.getElementById('saldoData').value = iso(today);
+  document.getElementById('saldoModalTitle').innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Adicionar Saldo';
+  document.getElementById('saldoDeleteBtn').classList.add('d-none');
+  document.getElementById('saldoSaveBtn').innerHTML = 'Adicionar saldo';
+  saldoModal.show();
+}
+
+function openSaldoModalEdit(id){
+  const s = SALDO_ENTRIES.find(x=>x.id===id);
+  if(!s) return;
+  editingSaldoId = id;
+  document.getElementById('saldoForm').reset();
+  document.getElementById('saldoModalTitle').innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Editar Saldo';
+  document.getElementById('saldoCategoria').value = s.categoria||'tecnicos';
+  document.getElementById('saldoValor').value = s.valor;
+  document.getElementById('saldoData').value = s.data;
+  document.getElementById('saldoDescricao').value = s.descricao||'';
+  document.getElementById('saldoDeleteBtn').classList.remove('d-none');
+  document.getElementById('saldoSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar saldo';
   saldoModal.show();
 }
 
@@ -4913,13 +5090,14 @@ document.getElementById('gastoSaveBtn').addEventListener('click', async ()=>{
     const tecnicoId = document.getElementById('gastoTecnico').value;
     const tipo = document.getElementById('gastoTipo').value;
     const valor = parseFloat(document.getElementById('gastoValor').value);
+    const categoria = document.getElementById('gastoCategoria').value;
     if(!tecnicoId){ showToast('Selecione o técnico.','warning'); return; }
     if(!tipo){ showToast('Selecione o tipo de gasto.','warning'); return; }
     if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
     const data = {
       tecnicoId: Number(tecnicoId),
       escolaId: document.getElementById('gastoEscolaId').value ? Number(document.getElementById('gastoEscolaId').value) : null,
-      tipo, valor,
+      tipo, valor, categoria,
       data: document.getElementById('gastoData').value || iso(today),
       observacoes: document.getElementById('gastoObservacoes').value.trim(),
     };
@@ -4953,26 +5131,51 @@ document.getElementById('gastoModal').addEventListener('hidden.bs.modal', ()=>{ 
 
 document.getElementById('saldoSaveBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('saldoSaveBtn');
+  const isEdit = !!editingSaldoId;
   try{
     const valor = parseFloat(document.getElementById('saldoValor').value);
+    const categoria = document.getElementById('saldoCategoria').value;
     if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A adicionar...';
-    await apiPost('/saldo-logistica', {
-      valor,
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
+    const payload = {
+      valor, categoria,
       data: document.getElementById('saldoData').value || iso(today),
       descricao: document.getElementById('saldoDescricao').value.trim(),
-    });
+    };
+    if(isEdit){
+      await apiPut('/saldo-logistica/'+editingSaldoId, payload);
+    } else {
+      await apiPost('/saldo-logistica', payload);
+    }
     saldoModal.hide();
     await loadAllData();
     renderGastos();
-    showToast('Saldo adicionado com sucesso.', 'success');
-  }catch(e){ console.error('Erro ao adicionar saldo:', e); showToast(e.message||'Erro ao adicionar saldo.','error'); }
-  finally{ btn.disabled = false; btn.innerHTML = 'Adicionar saldo'; }
+    showToast(isEdit ? 'Saldo atualizado com sucesso.' : 'Saldo adicionado com sucesso.', 'success');
+  }catch(e){ console.error('Erro ao guardar saldo:', e); showToast(e.message||'Erro ao guardar saldo.','error'); }
+  finally{ btn.disabled = false; btn.innerHTML = isEdit ? '<i class="bi bi-check-lg me-1"></i>Atualizar saldo' : 'Adicionar saldo'; }
 });
 
-['gastosSearch','gastosFilterTipo','gastosFilterTecnico','gastosFilterEscola','gastosFilterDe','gastosFilterAte'].forEach(id=>{
+document.getElementById('saldoDeleteBtn').addEventListener('click', async ()=>{
+  try{
+    if(!editingSaldoId) return;
+    if(!confirm('Remover esta entrada de saldo?')) return;
+    await apiDelete('/saldo-logistica/'+editingSaldoId);
+    saldoModal.hide();
+    await loadAllData();
+    renderGastos();
+    showToast('Saldo removido com sucesso.', 'success');
+  }catch(e){ showToast(e.message||'Erro ao remover saldo.','error'); }
+});
+
+document.getElementById('saldoModal').addEventListener('hidden.bs.modal', ()=>{ editingSaldoId = null; });
+
+['gastosSearch','gastosFilterTipo','gastosFilterTecnico','gastosFilterEscola','gastosFilterDe','gastosFilterAte','gastosFilterCategoria'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderGastos);
   document.getElementById(id).addEventListener('change', renderGastos);
+});
+['saldoHistFilterCategoria','saldoHistFilterDe','saldoHistFilterAte'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderSaldoHistorico);
+  document.getElementById(id).addEventListener('change', renderSaldoHistorico);
 });
 
 function pdfGastos(){
@@ -4986,7 +5189,7 @@ function pdfGastos(){
   doc.setFillColor(88,80,236); doc.rect(0,0,W,28,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text('Gastos de Logística — Relatório', MR, 12);
   doc.setFontSize(8); doc.text('Gerado em: '+fmtDatePt(iso(today)), MR, 19);
-  doc.setFontSize(9); doc.text('Total: '+fmtNum(total)+' Kz  |  Saldo disponível: '+fmtNum(SALDO_GLOBAL.saldoDisponivel)+' Kz  |  Registos: '+list.length, W-MR, 19, {align:'right'});
+  doc.setFontSize(9); doc.text('Total: '+fmtNum(total)+' Kz  |  Saldo disponível: '+fmtNum((SALDO_GLOBAL.total||SALDO_GLOBAL).saldoDisponivel)+' Kz  |  Registos: '+list.length, W-MR, 19, {align:'right'});
 
   let y = 34;
   const porTipo = {};
@@ -5019,9 +5222,12 @@ function pdfGastos(){
   y = Math.max(y, doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 50);
   doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Detalhe de Gastos', MR, y); y+=4;
 
-  const rows = list.map(g=>[fmtDatePt(g.data), g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||'']);
+  const rows = list.map(g=>{
+    const catLabel = g.categoria==='comerciais'?'Comercial':'Técnico';
+    return [fmtDatePt(g.data), catLabel, g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||''];
+  });
   doc.autoTable({
-    startY:y, head:[['Data','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
+    startY:y, head:[['Data','Categoria','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
     styles:{fontSize:8,cellPadding:3}, headStyles:{fillColor:[88,80,236],textColor:255},
     alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:MR},
   });

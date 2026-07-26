@@ -211,9 +211,11 @@ async function initSchema() {
       data VARCHAR(10) NOT NULL,
       observacoes TEXT,
       criado_em VARCHAR(10) NOT NULL,
+      categoria VARCHAR(20) NOT NULL DEFAULT 'tecnicos',
       INDEX idx_gl_tecnico (tecnico_id),
       INDEX idx_gl_escola (escola_id),
-      INDEX idx_gl_data (data)
+      INDEX idx_gl_data (data),
+      INDEX idx_gl_categoria (categoria)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
     await db.execute(`CREATE TABLE IF NOT EXISTS saldo_logistica (
@@ -223,12 +225,14 @@ async function initSchema() {
       descricao VARCHAR(255) NOT NULL DEFAULT '',
       data VARCHAR(10) NOT NULL,
       criado_em VARCHAR(10) NOT NULL,
-      INDEX idx_sl_tecnico (tecnico_id)
+      categoria VARCHAR(20) NOT NULL DEFAULT 'tecnicos',
+      INDEX idx_sl_tecnico (tecnico_id),
+      INDEX idx_sl_categoria (categoria)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
-    try {
-      await db.execute('ALTER TABLE saldo_logistica MODIFY tecnico_id INT DEFAULT NULL');
-    } catch (_) { /* column already nullable or table not created yet */ }
+    try { await db.execute('ALTER TABLE saldo_logistica MODIFY tecnico_id INT DEFAULT NULL'); } catch (_) {}
+    try { await db.execute('ALTER TABLE saldo_logistica ADD COLUMN categoria VARCHAR(20) NOT NULL DEFAULT \'tecnicos\''); } catch (_) {}
+    try { await db.execute('ALTER TABLE gastos_logistica ADD COLUMN categoria VARCHAR(20) NOT NULL DEFAULT \'tecnicos\''); } catch (_) {}
 
     console.log('MySQL schema initialized successfully');
   } finally {
