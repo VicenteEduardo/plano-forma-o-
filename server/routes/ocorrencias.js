@@ -15,9 +15,12 @@ router.get('/', async (req, res, next) => {
   try {
     const rows = (await query('SELECT * FROM ocorrencias ORDER BY atualizado_em DESC')).map(mapOcor);
     for (const o of rows) {
-      o.fotos = (await query('SELECT dados FROM ocorrencia_fotos WHERE ocorrencia_id=?', [o.id])).map(f => f.dados);
-      const vid = await queryOne('SELECT dados FROM ocorrencia_videos WHERE ocorrencia_id=?', [o.id]);
-      o.video = vid ? vid.dados : null;
+      const fotoCount = await queryOne('SELECT COUNT(*) as cnt FROM ocorrencia_fotos WHERE ocorrencia_id=?', [o.id]);
+      o.fotosCount = fotoCount ? fotoCount.cnt : 0;
+      const vidCount = await queryOne('SELECT COUNT(*) as cnt FROM ocorrencia_videos WHERE ocorrencia_id=?', [o.id]);
+      o.hasVideo = vidCount ? vidCount.cnt > 0 : false;
+      o.fotos = [];
+      o.video = null;
     }
     res.json(rows);
   } catch (err) { next(err); }
@@ -31,7 +34,19 @@ router.get('/:id', async (req, res, next) => {
     o.fotos = (await query('SELECT dados FROM ocorrencia_fotos WHERE ocorrencia_id=?', [o.id])).map(f => f.dados);
     const vid = await queryOne('SELECT dados FROM ocorrencia_videos WHERE ocorrencia_id=?', [o.id]);
     o.video = vid ? vid.dados : null;
+    o.fotosCount = o.fotos.length;
+    o.hasVideo = !!o.video;
     res.json(o);
+  } catch (err) { next(err); }
+});
+
+router.get('/:id/media', async (req, res, next) => {
+  try {
+    const r = await queryOne('SELECT id FROM ocorrencias WHERE id=?', [req.params.id]);
+    if (!r) return res.status(404).json({ error: 'Not found' });
+    const fotos = (await query('SELECT dados FROM ocorrencia_fotos WHERE ocorrencia_id=?', [req.params.id])).map(f => f.dados);
+    const vid = await queryOne('SELECT dados FROM ocorrencia_videos WHERE ocorrencia_id=?', [req.params.id]);
+    res.json({ fotos, video: vid ? vid.dados : null });
   } catch (err) { next(err); }
 });
 
@@ -49,8 +64,9 @@ router.post('/', async (req, res, next) => {
       );
       const ocorId = info.insertId;
       if (b.fotos && b.fotos.length) {
-        const stmt = await db.prepare('INSERT INTO ocorrencia_fotos (ocorrencia_id, dados) VALUES (?,?)');
-        for (const f of b.fotos) await stmt.execute([ocorId, f]);
+        for (const f of b.fotos) {
+          await db.execute('INSERT INTO ocorrencia_fotos (ocorrencia_id, dados) VALUES (?,?)', [ocorId, f]);
+        }
       }
       if (b.video) {
         await db.execute('INSERT INTO ocorrencia_videos (ocorrencia_id, dados) VALUES (?,?)', [ocorId, b.video]);
@@ -74,8 +90,9 @@ router.put('/:id', async (req, res, next) => {
       await db.execute('DELETE FROM ocorrencia_fotos WHERE ocorrencia_id=?', [req.params.id]);
       await db.execute('DELETE FROM ocorrencia_videos WHERE ocorrencia_id=?', [req.params.id]);
       if (b.fotos && b.fotos.length) {
-        const stmt = await db.prepare('INSERT INTO ocorrencia_fotos (ocorrencia_id, dados) VALUES (?,?)');
-        for (const f of b.fotos) await stmt.execute([req.params.id, f]);
+        for (const f of b.fotos) {
+          await db.execute('INSERT INTO ocorrencia_fotos (ocorrencia_id, dados) VALUES (?,?)', [req.params.id, f]);
+        }
       }
       if (b.video) {
         await db.execute('INSERT INTO ocorrencia_videos (ocorrencia_id, dados) VALUES (?,?)', [req.params.id, b.video]);
@@ -87,7 +104,12 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    await query('DELETE FROM ocorrencias WHERE id=?', [req.params.id]);
+    const db = await getDb();
+    try {
+      await db.execute('DELETE FROM ocorrencia_fotos WHERE ocorrencia_id=?', [req.params.id]);
+      await db.execute('DELETE FROM ocorrencia_videos WHERE ocorrencia_id=?', [req.params.id]);
+      await db.execute('DELETE FROM ocorrencias WHERE id=?', [req.params.id]);
+    } finally { db.release(); }
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

@@ -29,8 +29,12 @@ router.get('/', async (req, res, next) => {
       if (resp.ok) {
         const raw = await resp.json();
         external = (Array.isArray(raw) ? raw : []).map(normalizeEscola);
+      } else {
+        console.warn(`External EduAll API returned ${resp.status} ${resp.statusText}`);
       }
-    } catch (_) { /* external API down — fallback */ }
+    } catch (e) {
+      console.warn('External EduAll API unavailable, using local data:', e.message);
+    }
 
     /* also load local DB schools so old references still resolve */
     const local = (await query('SELECT * FROM escolas ORDER BY nome')).map(r => ({

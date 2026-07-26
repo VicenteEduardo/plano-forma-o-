@@ -1214,6 +1214,18 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<div class="modal fade" id="ocorViewerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-images me-1"></i>Fotos e Vídeos da Ocorrência</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="ocorViewerBody" style="max-height:80vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: PLANO DE FORMAÇÃO ============ -->
 <div class="modal fade" id="planoFormacaoModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -1652,7 +1664,9 @@ async function loadAllData(){
   if(results[0].status==='fulfilled') ESCOLAS = ok(0);
   TECNICOS = ok(1); EVENTOS = ok(2); AUSENCIAS = ok(3);
   REUNIOES = ok(4); PLANOS_FORMACAO = ok(5); NOTAS = ok(6); OCORRENCIAS = ok(7);
-  results.forEach((r,i)=>{ if(r.status==='rejected') console.error('loadAllData endpoint',i,'failed:',r.reason); });
+  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências'];
+  results.forEach((r,i)=>{ if(r.status==='rejected') console.error('loadAllData endpoint',endpointNames[i],'failed:',r.reason); });
+  if(results.some(r=>r.status==='rejected')) showToast('Alguns dados não foram carregados. A verificar ligação ao servidor.','warning');
   nextTechId = Math.max(0, ...TECNICOS.map(t=>t.id), 0) + 1;
   nextEventId = Math.max(0, ...EVENTOS.map(e=>e.id), 0) + 1;
   nextAusenciaId = Math.max(0, ...AUSENCIAS.map(a=>a.id), 0) + 1;
@@ -1904,12 +1918,30 @@ function weekdayShort(d){ return d.toLocaleDateString('pt-PT',{weekday:'short'})
 function startOfWeek(d){ const nd=new Date(d); const day=(nd.getDay()+6)%7; nd.setDate(nd.getDate()-day); nd.setHours(0,0,0,0); return nd; }
 function sameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
 
+function isTechAssignedToEvent(techId, evt){
+  const tid = Number(techId);
+  if(evt.tecnicoId === tid) return true;
+  if(evt.tecnicoIds && evt.tecnicoIds.includes(tid)) return true;
+  return false;
+}
+function isTechAssignedToReuniao(techId, r){
+  return r.tecnicoId === Number(techId);
+}
 function eventsForTech(techId, fromISO, toISO){
-  return EVENTOS.filter(e=> e.tecnicoId===Number(techId) && (!fromISO || e.data>=fromISO) && (!toISO || e.data<=toISO));
+  const evts = EVENTOS.filter(e=> isTechAssignedToEvent(techId, e) && (!fromISO || e.data>=fromISO) && (!toISO || e.data<=toISO));
+  const reus = REUNIOES.filter(r=> isTechAssignedToReuniao(techId, r) && (!fromISO || r.data>=fromISO) && (!toISO || r.data<=toISO));
+  return [...evts, ...reus.map(r=>({
+    id: 'reu-'+r.id, titulo: r.titulo||'Reunião', data: r.data,
+    horaInicio: r.horaInicio, horaFim: r.horaFim, estado: r.estado,
+    tecnicoId: r.tecnicoId, tipo: 'Reunião',
+  }))];
 }
 function occupiedMinutes(techId, dateISO){
-  return EVENTOS.filter(e=>e.tecnicoId===Number(techId) && e.data===dateISO && e.estado!=='Cancelado')
+  const evtMin = EVENTOS.filter(e=> isTechAssignedToEvent(techId, e) && e.data===dateISO && e.estado!=='Cancelado')
     .reduce((sum,e)=> sum + Math.max(0, timeToMin(e.horaFim)-timeToMin(e.horaInicio)), 0);
+  const reuMin = REUNIOES.filter(r=> isTechAssignedToReuniao(techId, r) && r.data===dateISO && r.estado!=='Cancelada')
+    .reduce((sum,r)=> sum + Math.max(0, timeToMin(r.horaFim)-timeToMin(r.horaInicio)), 0);
+  return evtMin + reuMin;
 }
 // occupancy for a technician over a date range (default: current week)
 function occupancyStats(tech, fromISO, toISO){
@@ -3030,6 +3062,7 @@ let nextOcorId = 1;
 let editingOcorId = null;
 let pendingOcorFotos = [];
 let pendingOcorVideo = null;
+let ocorMediaCache = {};
 
 const ocorrenciaModal = new bootstrap.Modal(document.getElementById('ocorrenciaModal'));
 
@@ -3064,8 +3097,8 @@ function openOcorrenciaModal(id){
     const o = OCORRENCIAS.find(x=>x.id===id);
     if(o){
       editingOcorId = id;
-      pendingOcorFotos = [...(o.fotos||[])];
-      pendingOcorVideo = o.video || null;
+      pendingOcorFotos = [];
+      pendingOcorVideo = null;
       document.getElementById('ocorModalTitle').innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i>Atualizar ocorrência';
       document.getElementById('ocorId').value = o.id;
       document.getElementById('ocorTitulo').value = o.titulo;
@@ -3077,13 +3110,30 @@ function openOcorrenciaModal(id){
       document.getElementById('ocorGravidade').value = o.gravidade;
       document.getElementById('ocorEstado').value = o.estado;
       document.getElementById('ocorResolucao').value = o.resolucao||'';
-      renderOcorGallery();
-      renderOcorVideoPreview();
+      loadOcorMedia(id).then(()=>{ renderOcorGallery(); renderOcorVideoPreview(); });
       document.getElementById('ocorDeleteBtn').classList.remove('d-none');
       document.getElementById('ocorSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar ocorrência';
     }
   }
   ocorrenciaModal.show();
+}
+async function loadOcorMedia(ocorId){
+  try {
+    if(ocorMediaCache[ocorId]){
+      pendingOcorFotos = [...ocorMediaCache[ocorId].fotos];
+      pendingOcorVideo = ocorMediaCache[ocorId].video;
+      return;
+    }
+    const media = await apiGet('/ocorrencias/'+ocorId+'/media');
+    pendingOcorFotos = media.fotos || [];
+    pendingOcorVideo = media.video || null;
+    ocorMediaCache[ocorId] = { fotos: [...pendingOcorFotos], video: pendingOcorVideo };
+  } catch(e) {
+    console.error('Erro ao carregar media da ocorrência:', e);
+    showToast('Erro ao carregar fotos/vídeos: '+e.message, 'error');
+    pendingOcorFotos = [];
+    pendingOcorVideo = null;
+  }
 }
 function resetOcorForm(){
   editingOcorId = null;
@@ -3174,6 +3224,7 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
     };
     if(editingOcorId){
       await apiPut('/ocorrencias/'+editingOcorId, payload);
+      delete ocorMediaCache[editingOcorId];
     } else {
       await apiPost('/ocorrencias', payload);
     }
@@ -3221,10 +3272,10 @@ function renderOcorrencias(){
     const t = techById(o.tecnicoId);
     const evt = o.eventoId ? EVENTOS.find(e=>e.id===o.eventoId) : null;
     let media = '';
-    if(o.fotos && o.fotos.length){
-      media = `<div class="ocor-thumb-strip">${o.fotos.slice(0,2).map(f=>`<img src="${f}">`).join('')}${o.fotos.length>2?`<div class="ocor-thumb-more">+${o.fotos.length-2}</div>`:''}</div>`;
-    } else if(o.video){
-      media = `<div class="ocor-media-placeholder"><i class="bi bi-camera-video-fill"></i></div>`;
+    if(o.fotosCount > 0){
+      media = `<div class="ocor-media-placeholder" style="cursor:pointer;" onclick="openOcorViewer(${o.id})"><i class="bi bi-images"></i><div style="font-size:11px;margin-top:2px;">${o.fotosCount} foto${o.fotosCount!==1?'s':''}</div></div>`;
+    } else if(o.hasVideo){
+      media = `<div class="ocor-media-placeholder" style="cursor:pointer;" onclick="openOcorViewer(${o.id})"><i class="bi bi-camera-video-fill"></i><div style="font-size:11px;margin-top:2px;">Vídeo</div></div>`;
     } else {
       media = `<div class="ocor-media-placeholder"><i class="bi bi-card-text"></i></div>`;
     }
@@ -3239,8 +3290,8 @@ function renderOcorrencias(){
           <div style="font-size:12.5px; color:var(--ink-700); overflow-wrap:anywhere;" class="mb-2">${o.descricao}</div>
           <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
             ${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}
-            ${o.video? `<span class="chip chip-info"><i class="bi bi-camera-video"></i>Vídeo anexado</span>`:''}
-            ${o.fotos && o.fotos.length? `<span class="chip chip-info"><i class="bi bi-images"></i>${o.fotos.length} foto${o.fotos.length!==1?'s':''}</span>`:''}
+            ${o.hasVideo? `<span class="chip chip-info"><i class="bi bi-camera-video"></i>Vídeo anexado</span>`:''}
+            ${o.fotosCount > 0? `<span class="chip chip-info"><i class="bi bi-images"></i>${o.fotosCount} foto${o.fotosCount!==1?'s':''}</span>`:''}
           </div>
           <div style="font-size:11.5px; color:var(--ink-500);">
             ${o.escolaId? (()=>{
@@ -3253,11 +3304,45 @@ function renderOcorrencias(){
           ${o.estado==='Resolvida' && o.resolucao? `<div class="mt-2" style="font-size:12px; background:var(--ok-bg); color:var(--ok); border-radius:8px; padding:6px 10px;"><i class="bi bi-check-circle-fill me-1"></i>${o.resolucao}</div>` : ''}
         </div>
         <div class="d-flex flex-column gap-1 flex-shrink-0">
+          ${(o.fotosCount > 0 || o.hasVideo) ? `<button class="btn btn-sm btn-light border" onclick="openOcorViewer(${o.id})"><i class="bi bi-eye me-1"></i>Ver</button>` : ''}
           <button class="btn btn-sm btn-soft" onclick="openOcorrenciaModal(${o.id})"><i class="bi bi-arrow-repeat me-1"></i>Atualizar</button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+function openOcorViewer(ocorId){
+  const modal = document.getElementById('ocorViewerModal');
+  const body = document.getElementById('ocorViewerBody');
+  body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">A carregar media...</div></div>';
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+  loadOcorMedia(ocorId).then(()=>{
+    const fotos = ocorMediaCache[ocorId]?.fotos || [];
+    const video = ocorMediaCache[ocorId]?.video || null;
+    if(!fotos.length && !video){
+      body.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-card-text" style="font-size:32px;"></i><div class="mt-2">Sem fotos ou vídeos anexados</div></div>';
+      return;
+    }
+    let html = '';
+    if(fotos.length){
+      html += '<div class="d-flex flex-wrap gap-2 mb-3">';
+      fotos.forEach((src,i)=>{
+        html += `<div style="position:relative;flex:0 0 auto;">
+          <img src="${src}" style="max-width:100%;max-height:70vh;border-radius:8px;cursor:pointer;" onclick="window.open('${src}','_blank')">
+          <a href="${src}" download class="btn btn-sm btn-light border" style="position:absolute;bottom:6px;right:6px;"><i class="bi bi-download"></i></a>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    if(video){
+      html += `<div class="mt-2"><video src="${video}" controls style="max-width:100%;max-height:60vh;border-radius:8px;"></video></div>`;
+    }
+    body.innerHTML = html;
+  }).catch(e=>{
+    body.innerHTML = `<div class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle" style="font-size:32px;"></i><div class="mt-2">Erro ao carregar: ${e.message}</div></div>`;
+  });
 }
 
 /* =========================================================================
