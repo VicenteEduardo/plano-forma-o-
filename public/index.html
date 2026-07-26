@@ -1931,11 +1931,24 @@ function isTechAssignedToReuniao(techId, r){
 function eventsForTech(techId, fromISO, toISO){
   const evts = EVENTOS.filter(e=> isTechAssignedToEvent(techId, e) && (!fromISO || e.data>=fromISO) && (!toISO || e.data<=toISO));
   const reus = REUNIOES.filter(r=> isTechAssignedToReuniao(techId, r) && (!fromISO || r.data>=fromISO) && (!toISO || r.data<=toISO));
+  const planos = [];
+  const tid = Number(techId);
+  PLANOS_FORMACAO.forEach(p=>{
+    (p.linhas||[]).forEach(l=>{
+      if(l.tecnicoId===tid && (!fromISO || l.data>=fromISO) && (!toISO || l.data<=toISO)){
+        planos.push({
+          id: 'plano-'+p.id+'-'+l.data, titulo: l.objetivo||p.nome||'Formação', data: l.data,
+          horaInicio: l.hora||'09:00', horaFim: (()=>{ const m=parseDuracaoMin(l.duracao); const [h,mi]=(l.hora||'09:00').split(':').map(Number); const fim=m+h*60+mi; return Math.floor(fim/60)+':'+String(fim%60).padStart(2,'0'); })(),
+          estado: 'Agendado', tecnicoId: tid, tipo: 'Formação',
+        });
+      }
+    });
+  });
   return [...evts, ...reus.map(r=>({
     id: 'reu-'+r.id, titulo: r.titulo||'Reunião', data: r.data,
     horaInicio: r.horaInicio, horaFim: r.horaFim, estado: r.estado,
     tecnicoId: r.tecnicoId, tipo: 'Reunião',
-  }))];
+  })), ...planos];
 }
 function occupiedMinutes(techId, dateISO){
   const evtMin = EVENTOS.filter(e=> isTechAssignedToEvent(techId, e) && e.data===dateISO && e.estado!=='Cancelado')
