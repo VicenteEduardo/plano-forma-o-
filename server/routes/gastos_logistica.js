@@ -52,12 +52,12 @@ router.post('/', async (req, res, next) => {
     const now = new Date().toISOString().slice(0,10);
 
     const [saldoRow] = await pool.query(`
-      SELECT COALESCE(SUM(valor), 0) - (
-        SELECT COALESCE(SUM(valor), 0) FROM gastos_logistica WHERE tecnico_id=?
-      ) as saldo
-      FROM saldo_logistica WHERE tecnico_id=?
-    `, [b.tecnicoId, b.tecnicoId]);
-    const saldo = Number(saldoRow[0]?.saldo || 0);
+      SELECT COALESCE(SUM(valor), 0) as total_saldo FROM saldo_logistica
+    `);
+    const [gastoRow] = await pool.query(`
+      SELECT COALESCE(SUM(valor), 0) as total_gasto FROM gastos_logistica
+    `);
+    const saldo = Number(saldoRow[0]?.total_saldo || 0) - Number(gastoRow[0]?.total_gasto || 0);
 
     if (saldo < Number(b.valor)) {
       return res.status(400).json({

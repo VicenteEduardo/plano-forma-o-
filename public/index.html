@@ -950,14 +950,14 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         <div class="row g-3 mb-3">
           <div class="col-md-3">
             <div class="panel kpi-card">
-              <div class="kpi-icon" style="background:var(--brand-50);color:var(--brand-600);"><i class="bi bi-cash-stack"></i></div>
-              <div><div class="kpi-value" id="gastosKpiTotal">0</div><div class="kpi-label">Total Gastos</div></div>
+              <div class="kpi-icon" style="background:#E8F5E9;color:#2E7D32;"><i class="bi bi-wallet2"></i></div>
+              <div><div class="kpi-value" id="gastosKpiSaldo">0</div><div class="kpi-label">Saldo Disponível</div></div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="panel kpi-card">
-              <div class="kpi-icon" style="background:#E8F5E9;color:#2E7D32;"><i class="bi bi-wallet2"></i></div>
-              <div><div class="kpi-value" id="gastosKpiSaldo">0</div><div class="kpi-label">Saldo Total Disponível</div></div>
+              <div class="kpi-icon" style="background:var(--brand-50);color:var(--brand-600);"><i class="bi bi-cash-stack"></i></div>
+              <div><div class="kpi-value" id="gastosKpiTotal">0</div><div class="kpi-label">Total Gastos</div></div>
             </div>
           </div>
           <div class="col-md-3">
@@ -971,17 +971,6 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
               <div class="kpi-icon" style="background:#E3F2FD;color:#1565C0;"><i class="bi bi-speedometer2"></i></div>
               <div><div class="kpi-value" id="gastosKpiMedia">0</div><div class="kpi-label">Média por Gasto</div></div>
             </div>
-          </div>
-        </div>
-        <div class="panel mb-3" id="gastosSaldoPanel" style="display:none;">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <div class="fw-bold" style="font-size:14px;"><i class="bi bi-wallet2 me-1 text-success"></i>Saldos por Técnico</div>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-modern mb-0" style="font-size:13px;">
-              <thead><tr><th>Técnico</th><th class="text-end">Saldo Atribuído</th><th class="text-end">Total Gasto</th><th class="text-end">Saldo Disponível</th><th class="text-end">Ações</th></tr></thead>
-              <tbody id="tabelaSaldoBody"></tbody>
-            </table>
           </div>
         </div>
         <div class="panel p-0">
@@ -1843,17 +1832,13 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
       <div class="modal-header border-0 pb-0">
         <div>
           <h5 class="modal-title fw-bold mb-0"><i class="bi bi-wallet2 me-1 text-success"></i>Adicionar Saldo de Logística</h5>
-          <div style="font-size:12px; color:var(--ink-500);">Atribuir saldo a um técnico para despesas de campo</div>
+          <div style="font-size:12px; color:var(--ink-500);">Atribuir saldo global para despesas de campo da equipa</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body pt-2">
         <form id="saldoForm">
           <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Técnico <span class="text-danger">*</span></label>
-              <select class="form-select" id="saldoTecnico" required></select>
-            </div>
             <div class="col-md-6">
               <label class="form-label">Valor (Kz) <span class="text-danger">*</span></label>
               <input type="number" class="form-control" id="saldoValor" min="0" step="0.01" required placeholder="0.00">
@@ -1862,7 +1847,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
               <label class="form-label">Data</label>
               <input type="date" class="form-control" id="saldoData">
             </div>
-            <div class="col-md-6">
+            <div class="col-12">
               <label class="form-label">Descrição</label>
               <input type="text" class="form-control" id="saldoDescricao" placeholder="Ex: Saldo mensal de julho">
             </div>
@@ -1899,7 +1884,7 @@ async function apiUpload(url, fieldName, fileOrFiles){
 }
 
 async function loadAllData(){
-  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo por técnico'];
+  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo global'];
   let loaded = 0, dashRendered = false;
   const assign = [
     d => { ESCOLAS = d; },
@@ -1911,12 +1896,12 @@ async function loadAllData(){
     d => { NOTAS = d; },
     d => { OCORRENCIAS = d; },
     d => { GASTOS = d; },
-    d => { SALDO_POR_TECNICO = d; },
+    d => { SALDO_GLOBAL = d; },
   ];
   const urls = [
     ESCOLAS.length ? null : '/escolas',
     '/tecnicos', '/eventos', '/ausencias', '/reunioes', '/planos', '/notas', '/ocorrencias',
-    '/gastos-logistica', '/saldo-logistica/saldo-por-tecnico',
+    '/gastos-logistica', '/saldo-logistica/global',
   ];
   const finishOne = (i)=>{
     loaded++;
@@ -3460,8 +3445,7 @@ function renderNotasList(){
 ========================================================================= */
 let OCORRENCIAS = [];
 let GASTOS = [];
-let SALDOS = [];
-let SALDO_POR_TECNICO = [];
+let SALDO_GLOBAL = {totalSaldo:0, totalGasto:0, saldoDisponivel:0};
 let nextOcorId = 1;
 let editingOcorId = null;
 let pendingOcorFotos = [];
@@ -4723,8 +4707,6 @@ function populateGastosSelects(){
   selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   const selFilter = document.getElementById('gastosFilterTecnico');
   selFilter.innerHTML = '<option value="todos">Todos os técnicos</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
-  const selSaldo = document.getElementById('saldoTecnico');
-  selSaldo.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
 }
 
 function renderGastos(){
@@ -4752,30 +4734,7 @@ function renderGastos(){
   document.getElementById('gastosKpiTotal').textContent = fmtNum(total) + ' Kz';
   document.getElementById('gastosKpiCount').textContent = count;
   document.getElementById('gastosKpiMedia').textContent = fmtNum(media) + ' Kz';
-
-  const totalSaldo = SALDO_POR_TECNICO.reduce((s,t)=> s+t.saldoDisponivel, 0);
-  document.getElementById('gastosKpiSaldo').textContent = fmtNum(totalSaldo) + ' Kz';
-
-  if(SALDO_POR_TECNICO.length){
-    document.getElementById('gastosSaldoPanel').style.display = '';
-    document.getElementById('tabelaSaldoBody').innerHTML = SALDO_POR_TECNICO.map(t=>{
-      const barPct = t.totalSaldo > 0 ? Math.max(0, Math.min(100, (t.saldoDisponivel / t.totalSaldo)*100)) : 0;
-      const barColor = t.saldoDisponivel > 0 ? '#12A972' : '#DD4B5B';
-      return `<tr>
-        <td class="fw-semibold">${t.tecnicoNome}</td>
-        <td class="text-end">${fmtNum(t.totalSaldo)} Kz</td>
-        <td class="text-end">${fmtNum(t.totalGasto)} Kz</td>
-        <td class="text-end"><span style="color:${barColor};font-weight:600;">${fmtNum(t.saldoDisponivel)} Kz</span>
-          <div style="height:4px;background:var(--line);border-radius:2px;margin-top:3px;"><div style="height:100%;width:${barPct}%;background:${barColor};border-radius:2px;"></div></div>
-        </td>
-        <td class="text-end">
-          <button class="btn btn-sm btn-outline-success" onclick="openSaldoModalFor('${t.tecnicoId}')"><i class="bi bi-plus-lg"></i></button>
-        </td>
-      </tr>`;
-    }).join('');
-  } else {
-    document.getElementById('gastosSaldoPanel').style.display = 'none';
-  }
+  document.getElementById('gastosKpiSaldo').textContent = fmtNum(SALDO_GLOBAL.saldoDisponivel) + ' Kz';
 
   const pgMeta = paginateSlice(list, 'gastos', 10);
   renderPaginationBar('pgGastos','gastos', pgMeta, renderGastos);
@@ -4822,15 +4781,8 @@ function openGastoModal(id){
   document.getElementById('gastoModalTitle').innerHTML = '<i class="bi bi-cash-stack me-1"></i>Novo Gasto de Logística';
 
   document.getElementById('gastoTecnico').onchange = function(){
-    const tid = this.value;
-    if(tid){
-      const saldo = SALDO_POR_TECNICO.find(s=>String(s.tecnicoId)===String(tid));
-      const disp = saldo ? saldo.saldoDisponivel : 0;
-      document.getElementById('gastoSaldoInfo').style.display = '';
-      document.getElementById('gastoSaldoDisplay').textContent = fmtNum(disp);
-    } else {
-      document.getElementById('gastoSaldoInfo').style.display = 'none';
-    }
+    document.getElementById('gastoSaldoInfo').style.display = '';
+    document.getElementById('gastoSaldoDisplay').textContent = fmtNum(SALDO_GLOBAL.saldoDisponivel);
   };
 
   if(id){
@@ -4853,16 +4805,8 @@ function openGastoModal(id){
 }
 
 function openSaldoModal(){
-  populateGastosSelects();
   document.getElementById('saldoForm').reset();
   document.getElementById('saldoData').value = iso(today);
-  saldoModal.show();
-}
-function openSaldoModalFor(techId){
-  populateGastosSelects();
-  document.getElementById('saldoForm').reset();
-  document.getElementById('saldoData').value = iso(today);
-  document.getElementById('saldoTecnico').value = techId;
   saldoModal.show();
 }
 
@@ -4914,13 +4858,10 @@ document.getElementById('gastoModal').addEventListener('hidden.bs.modal', ()=>{ 
 document.getElementById('saldoSaveBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('saldoSaveBtn');
   try{
-    const tecnicoId = document.getElementById('saldoTecnico').value;
     const valor = parseFloat(document.getElementById('saldoValor').value);
-    if(!tecnicoId){ showToast('Selecione o técnico.','warning'); return; }
     if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A adicionar...';
     await apiPost('/saldo-logistica', {
-      tecnicoId: Number(tecnicoId),
       valor,
       data: document.getElementById('saldoData').value || iso(today),
       descricao: document.getElementById('saldoDescricao').value.trim(),
@@ -4946,7 +4887,7 @@ function pdfGastos(){
   doc.setFillColor(88,80,236); doc.rect(0,0,W,28,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text('Gastos de Logística — Relatório', MR, 12);
   doc.setFontSize(8); doc.text('Gerado em: '+fmtDatePt(iso(today)), MR, 19);
-  doc.setFontSize(9); doc.text('Total: '+fmtNum(GASTOS.reduce((s,g)=>s+g.valor,0))+' Kz', W-MR, 19, {align:'right'});
+  doc.setFontSize(9); doc.text('Total: '+fmtNum(GASTOS.reduce((s,g)=>s+g.valor,0))+' Kz  |  Saldo disponível: '+fmtNum(SALDO_GLOBAL.saldoDisponivel)+' Kz', W-MR, 19, {align:'right'});
   const rows = GASTOS.map(g=>[fmtDatePt(g.data), g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||'']);
   doc.autoTable({
     startY:34, head:[['Data','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
