@@ -937,14 +937,19 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 
       <section class="section-view" id="view-gastos">
         <div class="filter-bar">
-          <input type="text" class="form-control" id="gastosSearch" placeholder="Pesquisar por técnico, escola...">
+          <input type="text" class="form-control" id="gastosSearch" placeholder="Pesquisar...">
           <select class="form-select" id="gastosFilterTipo">
             <option value="todos">Todos os tipos</option>
-            <option>Formação</option><option>Reunião</option><option>Apresentação do Sistema</option><option>Outros</option>
+            <option>Formação</option><option>Reunião</option><option>Apresentação do Sistema</option><option>Carregamento de Internet</option><option>Outros</option>
           </select>
           <select class="form-select" id="gastosFilterTecnico"><option value="todos">Todos os técnicos</option></select>
+          <select class="form-select" id="gastosFilterEscola"><option value="todos">Todas as escolas</option></select>
+          <input type="date" class="form-control" id="gastosFilterDe" title="Data de" style="max-width:160px;">
+          <input type="date" class="form-control" id="gastosFilterAte" title="Data até" style="max-width:160px;">
+          <button class="btn btn-outline-secondary btn-sm" onclick="limparFiltrosGastos()" title="Limpar filtros"><i class="bi bi-x-lg"></i></button>
+          <span class="ms-auto"></span>
           <button class="btn btn-brand btn-sm" onclick="openGastoModal()"><i class="bi bi-plus-lg me-1"></i>Novo Gasto</button>
-          <button class="btn btn-outline-success btn-sm" onclick="openSaldoModal()"><i class="bi bi-wallet2 me-1"></i>Adicionar Saldo</button>
+          <button class="btn btn-outline-success btn-sm" onclick="openSaldoModal()"><i class="bi bi-wallet2 me-1"></i>Saldo</button>
           <button class="btn btn-outline-danger btn-sm" onclick="pdfGastos()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="row g-3 mb-3">
@@ -970,6 +975,26 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             <div class="panel kpi-card">
               <div class="kpi-icon" style="background:#E3F2FD;color:#1565C0;"><i class="bi bi-speedometer2"></i></div>
               <div><div class="kpi-value" id="gastosKpiMedia">0</div><div class="kpi-label">Média por Gasto</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-pie-chart me-1 text-primary"></i>Gastos por Tipo</div>
+              <div id="gastosAnalyticsTipo"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-building me-1 text-warning"></i>Top Escolas</div>
+              <div id="gastosAnalyticsEscola"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-people me-1 text-success"></i>Top Técnicos</div>
+              <div id="gastosAnalyticsTecnico"></div>
             </div>
           </div>
         </div>
@@ -1798,6 +1823,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                 <option>Formação</option>
                 <option>Reunião</option>
                 <option>Apresentação do Sistema</option>
+                <option>Carregamento de Internet</option>
                 <option>Outros</option>
               </select>
             </div>
@@ -2138,7 +2164,10 @@ let TECNICOS = [];
 let nextTechId = 1;
 
 const today = new Date();
-function iso(d){ return d.toISOString().slice(0,10); }
+function iso(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function shiftDate(base, days){ const d = new Date(base); d.setDate(d.getDate()+days); return d; }
 
 let EVENTOS = [];
@@ -4707,19 +4736,74 @@ function populateGastosSelects(){
   selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   const selFilter = document.getElementById('gastosFilterTecnico');
   selFilter.innerHTML = '<option value="todos">Todos os técnicos</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  const selEsc = document.getElementById('gastosFilterEscola');
+  if(selEsc.options.length <= 1){
+    selEsc.innerHTML = '<option value="todos">Todas as escolas</option>' + ESCOLAS.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  }
+}
+
+function getGastosFiltrados(){
+  const fTipo = document.getElementById('gastosFilterTipo').value;
+  const fTecnico = document.getElementById('gastosFilterTecnico').value;
+  const fEscola = document.getElementById('gastosFilterEscola').value;
+  const fDe = document.getElementById('gastosFilterDe').value;
+  const fAte = document.getElementById('gastosFilterAte').value;
+  const search = (document.getElementById('gastosSearch').value||'').toLowerCase();
+  return GASTOS.filter(g=>{
+    if(fTipo!=='todos' && g.tipo!==fTipo) return false;
+    if(fTecnico!=='todos' && String(g.tecnicoId)!==String(fTecnico)) return false;
+    if(fEscola!=='todos' && String(g.escolaId)!==String(fEscola)) return false;
+    if(fDe && g.data < fDe) return false;
+    if(fAte && g.data > fAte) return false;
+    if(search && !(g.tecnicoNome||'').toLowerCase().includes(search) && !(g.escolaNome||'').toLowerCase().includes(search) && !(g.observacoes||'').toLowerCase().includes(search) && !(g.tipo||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function renderGastosAnalytics(list){
+  const total = list.reduce((s,g)=>s+g.valor, 0);
+  const tipoColors = {'Formação':'#12A972','Reunião':'#E08A2E','Apresentação do Sistema':'#7C3AED','Carregamento de Internet':'#2E9BE0','Outros':'#6B7093'};
+
+  const porTipo = {};
+  list.forEach(g=>{ porTipo[g.tipo] = (porTipo[g.tipo]||0) + g.valor; });
+  const tipoArr = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('gastosAnalyticsTipo').innerHTML = tipoArr.length ? tipoArr.map(([tipo,val])=>{
+    const pct = total ? (val/total*100) : 0;
+    const color = tipoColors[tipo]||'#6B7093';
+    return `<div class="mb-2">
+      <div class="d-flex justify-content-between" style="font-size:12px;"><span>${tipo}</span><span class="fw-bold">${fmtNum(val)} Kz <span class="text-muted">(${pct.toFixed(0)}%)</span></span></div>
+      <div style="height:6px;background:var(--line);border-radius:3px;margin-top:3px;"><div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div></div>
+    </div>`;
+  }).join('') : '<div class="text-muted" style="font-size:12px;">Sem dados</div>';
+
+  const porEscola = {};
+  list.forEach(g=>{ const n = g.escolaNome||'Sem escola'; porEscola[n] = (porEscola[n]||0) + g.valor; });
+  const escArr = Object.entries(porEscola).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('gastosAnalyticsEscola').innerHTML = escArr.length ? escArr.map(([nome,val],i)=>{
+    const pct = total ? (val/total*100) : 0;
+    return `<div class="d-flex align-items-center gap-2 mb-2" style="font-size:12px;">
+      <span class="fw-bold text-muted" style="width:16px;">${i+1}.</span>
+      <span class="flex-grow-1" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</span>
+      <span class="fw-bold">${fmtNum(val)} Kz</span>
+    </div>`;
+  }).join('') : '<div class="text-muted" style="font-size:12px;">Sem dados</div>';
+
+  const porTec = {};
+  list.forEach(g=>{ const n = g.tecnicoNome||'Sem técnico'; porTec[n] = (porTec[n]||0) + g.valor; });
+  const tecArr = Object.entries(porTec).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('gastosAnalyticsTecnico').innerHTML = tecArr.length ? tecArr.map(([nome,val],i)=>{
+    const pct = total ? (val/total*100) : 0;
+    return `<div class="d-flex align-items-center gap-2 mb-2" style="font-size:12px;">
+      <span class="fw-bold text-muted" style="width:16px;">${i+1}.</span>
+      <span class="flex-grow-1" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</span>
+      <span class="fw-bold">${fmtNum(val)} Kz</span>
+    </div>`;
+  }).join('') : '<div class="text-muted" style="font-size:12px;">Sem dados</div>';
 }
 
 function renderGastos(){
   populateGastosSelects();
-  const fTipo = document.getElementById('gastosFilterTipo').value;
-  const fTecnico = document.getElementById('gastosFilterTecnico').value;
-  const search = (document.getElementById('gastosSearch').value||'').toLowerCase();
-
-  let list = GASTOS.filter(g=>
-    (fTipo==='todos' || g.tipo===fTipo) &&
-    (fTecnico==='todos' || String(g.tecnicoId)===String(fTecnico)) &&
-    (!search || (g.tecnicoNome||'').toLowerCase().includes(search) || (g.escolaNome||'').toLowerCase().includes(search) || (g.observacoes||'').toLowerCase().includes(search))
-  );
+  const list = getGastosFiltrados();
   list.sort((a,b)=> {
     let va=a[gastosSortKey], vb=b[gastosSortKey];
     if(gastosSortKey==='valor'){ va=Number(va); vb=Number(vb); }
@@ -4736,16 +4820,18 @@ function renderGastos(){
   document.getElementById('gastosKpiMedia').textContent = fmtNum(media) + ' Kz';
   document.getElementById('gastosKpiSaldo').textContent = fmtNum(SALDO_GLOBAL.saldoDisponivel) + ' Kz';
 
+  renderGastosAnalytics(list);
+
   const pgMeta = paginateSlice(list, 'gastos', 10);
   renderPaginationBar('pgGastos','gastos', pgMeta, renderGastos);
-  list = pgMeta.slice;
+  const page = pgMeta.slice;
 
   const tbody = document.getElementById('tabelaGastosBody');
-  if(!list.length){
+  if(!page.length){
     tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-cash-stack" style="font-size:28px;"></i><div class="mt-2">Nenhum gasto registado</div></td></tr>`;
     return;
   }
-  tbody.innerHTML = list.map(g=>{
+  tbody.innerHTML = page.map(g=>{
     const t = techById(g.tecnicoId);
     const tipoChip = {'Formação':'chip-info','Reunião':'chip-warning','Apresentação do Sistema':'chip-purple','Outros':'chip-muted'}[g.tipo]||'chip-muted';
     return `<tr style="cursor:pointer;" onclick="openGastoModal(${g.id})">
@@ -4765,6 +4851,16 @@ function renderGastos(){
       </td>
     </tr>`;
   }).join('');
+}
+
+function limparFiltrosGastos(){
+  document.getElementById('gastosSearch').value = '';
+  document.getElementById('gastosFilterTipo').value = 'todos';
+  document.getElementById('gastosFilterTecnico').value = 'todos';
+  document.getElementById('gastosFilterEscola').value = 'todos';
+  document.getElementById('gastosFilterDe').value = '';
+  document.getElementById('gastosFilterAte').value = '';
+  renderGastos();
 }
 
 function openGastoModal(id){
@@ -4874,7 +4970,7 @@ document.getElementById('saldoSaveBtn').addEventListener('click', async ()=>{
   finally{ btn.disabled = false; btn.innerHTML = 'Adicionar saldo'; }
 });
 
-['gastosSearch','gastosFilterTipo','gastosFilterTecnico'].forEach(id=>{
+['gastosSearch','gastosFilterTipo','gastosFilterTecnico','gastosFilterEscola','gastosFilterDe','gastosFilterAte'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderGastos);
   document.getElementById(id).addEventListener('change', renderGastos);
 });
@@ -4883,14 +4979,49 @@ function pdfGastos(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l','mm','a4');
   const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), MR=14;
+  const list = getGastosFiltrados();
+  const total = list.reduce((s,g)=>s+g.valor, 0);
+
   doc.setFillColor(255,255,255); doc.rect(0,0,W,H,'F');
   doc.setFillColor(88,80,236); doc.rect(0,0,W,28,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text('Gastos de Logística — Relatório', MR, 12);
   doc.setFontSize(8); doc.text('Gerado em: '+fmtDatePt(iso(today)), MR, 19);
-  doc.setFontSize(9); doc.text('Total: '+fmtNum(GASTOS.reduce((s,g)=>s+g.valor,0))+' Kz  |  Saldo disponível: '+fmtNum(SALDO_GLOBAL.saldoDisponivel)+' Kz', W-MR, 19, {align:'right'});
-  const rows = GASTOS.map(g=>[fmtDatePt(g.data), g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||'']);
+  doc.setFontSize(9); doc.text('Total: '+fmtNum(total)+' Kz  |  Saldo disponível: '+fmtNum(SALDO_GLOBAL.saldoDisponivel)+' Kz  |  Registos: '+list.length, W-MR, 19, {align:'right'});
+
+  let y = 34;
+  const porTipo = {};
+  list.forEach(g=>{ porTipo[g.tipo] = (porTipo[g.tipo]||0) + g.valor; });
+  const tipoArr = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+  if(tipoArr.length){
+    doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Resumo por Tipo', MR, y); y+=6;
+    const tipoRows = tipoArr.map(([tipo,val])=>[tipo, fmtNum(val)+' Kz', (total?(val/total*100).toFixed(1)+'%':'0%')]);
+    doc.autoTable({
+      startY:y, head:[['Tipo','Valor','%']], body:tipoRows,
+      styles:{fontSize:8,cellPadding:2}, headStyles:{fillColor:[88,80,236],textColor:255},
+      alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:W/2+10}, tableWidth:80,
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  const porEscola = {};
+  list.forEach(g=>{ const n=g.escolaNome||'Sem escola'; porEscola[n]=(porEscola[n]||0)+g.valor; });
+  const escArr = Object.entries(porEscola).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(escArr.length){
+    doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Top Escolas', MR+100, 34);
+    const escRows = escArr.map(([nome,val])=>[nome, fmtNum(val)+' Kz']);
+    doc.autoTable({
+      startY:40, head:[['Escola','Valor']], body:escRows,
+      styles:{fontSize:8,cellPadding:2}, headStyles:{fillColor:[88,80,236],textColor:255},
+      alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR+100,right:MR}, tableWidth:90,
+    });
+  }
+
+  y = Math.max(y, doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 50);
+  doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Detalhe de Gastos', MR, y); y+=4;
+
+  const rows = list.map(g=>[fmtDatePt(g.data), g.tecnicoNome||'-', g.escolaNome||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||'']);
   doc.autoTable({
-    startY:34, head:[['Data','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
+    startY:y, head:[['Data','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
     styles:{fontSize:8,cellPadding:3}, headStyles:{fillColor:[88,80,236],textColor:255},
     alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:MR},
   });
