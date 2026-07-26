@@ -11,7 +11,7 @@ function mapAus(r) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const rows = await query('SELECT * FROM ausencias ORDER BY inicio');
+    const rows = await query('SELECT * FROM ausencias ORDER BY inicio DESC');
     res.json(rows.map(mapAus));
   } catch (err) { next(err); }
 });

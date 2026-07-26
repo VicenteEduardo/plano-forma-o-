@@ -1941,7 +1941,15 @@ function occupiedMinutes(techId, dateISO){
     .reduce((sum,e)=> sum + Math.max(0, timeToMin(e.horaFim)-timeToMin(e.horaInicio)), 0);
   const reuMin = REUNIOES.filter(r=> isTechAssignedToReuniao(techId, r) && r.data===dateISO && r.estado!=='Cancelada')
     .reduce((sum,r)=> sum + Math.max(0, timeToMin(r.horaFim)-timeToMin(r.horaInicio)), 0);
-  return evtMin + reuMin;
+  let planoMin = 0;
+  PLANOS_FORMACAO.forEach(p=>{
+    (p.linhas||[]).forEach(l=>{
+      if(l.tecnicoId===Number(techId) && l.data===dateISO){
+        planoMin += parseDuracaoMin(l.duracao||'1h');
+      }
+    });
+  });
+  return evtMin + reuMin + planoMin;
 }
 // occupancy for a technician over a date range (default: current week)
 function occupancyStats(tech, fromISO, toISO){
@@ -1960,6 +1968,18 @@ function occupancyStats(tech, fromISO, toISO){
   return {ocupadoMin: totalOcupado, capacidadeMin: totalCapacity, livreMin: Math.max(0,totalCapacity-totalOcupado), pct: Math.min(pct,100)};
 }
 function fmtHoras(min){ const h = min/60; return (Math.round(h*10)/10) + 'h'; }
+function parseDuracaoMin(dur){
+  if(!dur) return 60;
+  const s = String(dur).toLowerCase().trim();
+  if(s.includes('min')) return parseInt(s)||60;
+  if(s.includes('h')){
+    const parts = s.split('h');
+    const h = parseInt(parts[0])||0;
+    const m = parseInt(parts[1])||0;
+    return h*60+m;
+  }
+  return parseInt(s)||60;
+}
 
 function currentWeekRange(){
   const s = startOfWeek(today);
@@ -2384,7 +2404,7 @@ function editTech(id){
 }
 function deleteTech(id){
   if(!confirm('Remover este técnico e todos os seus eventos associados?')) return;
-  apiDelete('/tecnicos/'+id).then(()=> refreshAll());
+  apiDelete('/tecnicos/'+id).then(()=> refreshAll()).catch(e=>{ console.error('Erro ao remover técnico:', e); showToast('Erro ao remover técnico: '+e.message,'error'); });
 }
 async function uploadTechFoto(techId){
   if(!techFotoFile) return;
@@ -2631,7 +2651,7 @@ function openEventModal(id, prefillData, prefillHora){
     document.getElementById('evtObservacoes').value = e.observacoes||'';
     _schoolSelects['ssWrapEvtEscola'].__setValue(e.escolaId||null);
     delBtn.classList.remove('d-none');
-    delBtn.onclick = ()=>{ if(confirm('Remover este evento?')){ apiDelete('/eventos/'+id).then(()=>{ eventModal.hide(); loadAllData().then(()=> refreshAll()); }); } };
+    delBtn.onclick = ()=>{ if(confirm('Remover este evento?')){ apiDelete('/eventos/'+id).then(()=>{ eventModal.hide(); loadAllData().then(()=> refreshAll()); showToast('Evento removido com sucesso.','success'); }).catch(e=>{ console.error('Erro ao remover evento:', e); showToast('Erro ao remover evento: '+e.message,'error'); }); } };
   } else {
     document.getElementById('eventModalTitle').textContent = 'Novo evento';
     document.getElementById('eventForm').reset();
@@ -2679,6 +2699,7 @@ document.getElementById('evtSaveBtn').addEventListener('click', async ()=>{
     eventModal.hide();
     await loadAllData();
     refreshAll();
+    showToast(idVal ? 'Evento atualizado com sucesso.' : 'Evento criado com sucesso.', 'success');
   }catch(e){ console.error('Erro ao guardar evento:', e); showToast('Erro ao guardar evento: '+e.message,'error'); }
 });
 
@@ -2764,7 +2785,7 @@ function renderEventosTable(){
 }
 function quickDeleteEvent(id){
   if(!confirm('Remover este evento?')) return;
-  apiDelete('/eventos/'+id).then(()=> loadAllData().then(()=> refreshAll()));
+  apiDelete('/eventos/'+id).then(()=> loadAllData().then(()=> refreshAll())).catch(e=>{ console.error('Erro ao remover evento:', e); showToast('Erro ao remover evento: '+e.message,'error'); });
 }
 ['evtSearch','evtFilterTipo','evtFilterEstado','evtFilterResponsavel'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderEventosTable);
@@ -2870,7 +2891,6 @@ function techAvailabilityInRange(tech, fromISO, toISO, horaInicio, horaFim){
     return {livre:false, motivo:tech.estado, conflitos:[]};
   }
   const dias = dateRangeArray(fromISO, toISO);
-  // ausências aprovadas (férias/day off/baixa/licença/...) tornam o técnico indisponível em qualquer dia do intervalo
   for(const dISO of dias){
     const resumo = ausenciaAtivaResumo(tech.id, dISO);
     if(resumo) return {livre:false, motivo:resumo, conflitos:[]};
@@ -2879,11 +2899,22 @@ function techAvailabilityInRange(tech, fromISO, toISO, horaInicio, horaFim){
   const winEnd = horaFim ? timeToMin(horaFim) : timeToMin(tech.horaFim);
   let conflitos = [];
   dias.forEach(dISO=>{
-    const dayEvts = EVENTOS.filter(e=> e.tecnicoId===tech.id && e.data===dISO && e.estado!=='Cancelado');
+    const dayEvts = EVENTOS.filter(e=> isTechAssignedToEvent(tech.id, e) && e.data===dISO && e.estado!=='Cancelado');
     dayEvts.forEach(e=>{
       const eStart = timeToMin(e.horaInicio), eEnd = timeToMin(e.horaFim);
-      // overlap check between [eStart,eEnd) and [winStart,winEnd)
-      if(eStart < winEnd && eEnd > winStart){ conflitos.push(e); }
+      if(eStart < winEnd && eEnd > winStart){ conflitos.push({...e, tipo: e.tipo||'Evento'}); }
+    });
+    const dayReus = REUNIOES.filter(r=> isTechAssignedToReuniao(tech.id, r) && r.data===dISO && r.estado!=='Cancelada');
+    dayReus.forEach(r=>{
+      const rStart = timeToMin(r.horaInicio), rEnd = timeToMin(r.horaFim);
+      if(rStart < winEnd && rEnd > winStart){ conflitos.push({id:'reu-'+r.id, titulo:r.titulo||'Reunião', data:r.data, horaInicio:r.horaInicio, horaFim:r.horaFim, tipo:'Reunião'}); }
+    });
+    const dayPlanos = PLANOS_FORMACAO.flatMap(p=> (p.linhas||[]).filter(l=> l.tecnicoId===Number(tech.id) && l.data===dISO).map(l=>({...l, titulo:l.objetivo||'Formação', tipo:'Formação', estado:'Agendado'})));
+    dayPlanos.forEach(p=>{
+      const pHora = timeToMin(p.hora||'08:00');
+      const pDurMin = parseDuracaoMin(p.duracao||'1h');
+      const pEnd = pHora + pDurMin;
+      if(pHora < winEnd && pEnd > winStart){ conflitos.push({...p, horaInicio:p.hora||'08:00', horaFim:minToTime(pEnd)}); }
     });
   });
   return {livre: conflitos.length===0, motivo:null, conflitos};
@@ -3027,7 +3058,7 @@ function editNota(id){
 }
 function deleteNota(id){
   if(!confirm('Remover esta nota?')) return;
-  apiDelete('/notas/'+id).then(()=>{ if(editingNotaId===id) resetNotaForm(); loadAllData().then(()=> renderNotasList()); });
+  apiDelete('/notas/'+id).then(()=>{ if(editingNotaId===id) resetNotaForm(); loadAllData().then(()=> renderNotasList()); }).catch(e=>{ console.error('Erro ao remover nota:', e); showToast('Erro ao remover nota: '+e.message,'error'); });
 }
 document.getElementById('notaSearch').addEventListener('input', renderNotasList);
 
@@ -3795,8 +3826,8 @@ function regenerarPlanoPDF(id){
   gerarPlanoFormacaoPDF({...p});
 }
 function removerPlanoHistorico(id){
-  if(!confirm('Remover este plano de formação do histórico?')) return;
-  apiDelete('/planos/'+id).then(()=> loadAllData().then(()=> renderPlanosHistorico()));
+  if(!confirm('Remover este plano de formação?')) return;
+  apiDelete('/planos/'+id).then(()=> loadAllData().then(()=> renderPlanosHistorico())).catch(e=>{ console.error('Erro ao remover plano:', e); showToast('Erro ao remover plano: '+e.message,'error'); });
 }
 document.querySelectorAll('#view-planos .sortable').forEach(th=>{
   th.addEventListener('click', ()=>{
@@ -4072,7 +4103,7 @@ function renderReunioes(){
 }
 function removerReuniao(id){
   if(!confirm('Remover esta reunião estratégica?')) return;
-  apiDelete('/reunioes/'+id).then(()=> loadAllData().then(()=> renderReunioes()));
+  apiDelete('/reunioes/'+id).then(()=> loadAllData().then(()=> renderReunioes())).catch(e=>{ console.error('Erro ao remover reunião:', e); showToast('Erro ao remover reunião: '+e.message,'error'); });
 }
 document.querySelectorAll('#view-reunioes .sortable').forEach(th=>{
   th.addEventListener('click', ()=>{
@@ -4172,8 +4203,8 @@ function renderAusenciasList(){
   }).join('');
 }
 function removerAusencia(id){
-  if(!confirm('Remover este registo de ausência?')) return;
-  apiDelete('/ausencias/'+id).then(()=> loadAllData().then(()=> { renderAusenciasList(); renderAusenciasWidget(); renderTecnicos(); renderDashboard(); }));
+  if(!confirm('Remover esta ausência?')) return;
+  apiDelete('/ausencias/'+id).then(()=> loadAllData().then(()=> { renderAusenciasList(); renderAusenciasWidget(); renderTecnicos(); renderDashboard(); })).catch(e=>{ console.error('Erro ao remover ausência:', e); showToast('Erro ao remover ausência: '+e.message,'error'); });
 }
 ['ausSearch','ausFilterTipo','ausFilterEstado'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderAusenciasList);

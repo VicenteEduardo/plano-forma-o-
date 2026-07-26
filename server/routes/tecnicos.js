@@ -28,7 +28,7 @@ function mapTec(r) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const rows = await query('SELECT * FROM tecnicos ORDER BY nome');
+    const rows = await query('SELECT * FROM tecnicos ORDER BY id DESC');
     res.json(rows.map(mapTec));
   } catch (err) { next(err); }
 });

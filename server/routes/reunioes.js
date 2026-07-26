@@ -63,6 +63,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
+    await query('DELETE FROM reuniao_historico WHERE reuniao_id=?', [req.params.id]);
     await query('DELETE FROM reunioes WHERE id=?', [req.params.id]);
     res.json({ ok: true });
   } catch (err) { next(err); }

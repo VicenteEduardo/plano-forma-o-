@@ -23,7 +23,7 @@ async function loadTechIds(eventoIds) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const rows = await query('SELECT * FROM eventos ORDER BY data, hora_inicio');
+    const rows = await query('SELECT * FROM eventos ORDER BY data DESC, hora_inicio DESC');
     const techMap = await loadTechIds(rows.map(r => r.id));
     res.json(rows.map(r => mapEvt(r, techMap[r.id])));
   } catch (err) { next(err); }
