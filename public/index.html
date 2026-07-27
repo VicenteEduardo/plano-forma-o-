@@ -38,6 +38,7 @@
   --type-assistencia:#DD4B5B;
   --type-instalacao:#2E9BE0;
   --type-manutencao:#6B7093;
+  --type-internet:#0EA5A5;
   --type-outros:#AEB2CB;
 }
 *{box-sizing:border-box;}
@@ -2049,6 +2050,7 @@ const EVENT_TYPES = [
   {id:'Assistência técnica', color:'var(--type-assistencia)', hex:'#DD4B5B'},
   {id:'Instalação', color:'var(--type-instalacao)', hex:'#2E9BE0'},
   {id:'Manutenção', color:'var(--type-manutencao)', hex:'#6B7093'},
+  {id:'Carregamento de Internet', color:'var(--type-internet)', hex:'#0EA5A5'},
   {id:'Outros', color:'var(--type-outros)', hex:'#AEB2CB'},
 ];
 function typeHex(t){ const f = EVENT_TYPES.find(e=>e.id===t); return f? f.hex : '#AEB2CB'; }
@@ -3339,10 +3341,8 @@ function openAvailabilityModal(){
   const selEquipa = document.getElementById('availEquipa');
   const equipas = [...new Set(TECNICOS.map(t=>t.equipa).filter(Boolean))];
   selEquipa.innerHTML = '<option value="todos">Todas as equipas</option>' + equipas.map(e=>`<option value="${e}">${e}</option>`).join('');
-  if(!document.getElementById('availDataInicio').value){
-    document.getElementById('availDataInicio').value = iso(today);
-    document.getElementById('availDataFim').value = iso(today);
-  }
+  document.getElementById('availDataInicio').value = iso(today);
+  document.getElementById('availDataFim').value = iso(today);
   availabilityModal.show();
 }
 
@@ -3802,6 +3802,13 @@ document.getElementById('ocorrenciaModal').addEventListener('hidden.bs.modal', r
 function renderOcorrencias(){
   const fEstado = document.getElementById('ocorFilterEstado').value;
   const fPrio = document.getElementById('ocorFilterPrioridade').value;
+  const fEsc = document.getElementById('ocorFilterEscola').value;
+
+  const selEsc = document.getElementById('ocorFilterEscola');
+  const usedEscolaIds = [...new Set(OCORRENCIAS.filter(o=>o.escolaId).map(o=>o.escolaId))];
+  const prevVal = selEsc.value;
+  selEsc.innerHTML = '<option value="todos">Todas as escolas</option>' + ESCOLAS.filter(e=> usedEscolaIds.includes(e.id)).map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  selEsc.value = prevVal;
 
   document.getElementById('ocorAbertasChip').textContent = OCORRENCIAS.filter(o=>o.estado==='Aberta').length + ' abertas';
   document.getElementById('ocorAnaliseChip').textContent = OCORRENCIAS.filter(o=>o.estado==='Em análise').length + ' em análise';
@@ -3809,7 +3816,8 @@ function renderOcorrencias(){
 
   let list = OCORRENCIAS.filter(o=>
     (fEstado==='todos' || o.estado===fEstado) &&
-    (fPrio==='todos' || o.prioridade===fPrio)
+    (fPrio==='todos' || o.prioridade===fPrio) &&
+    (fEsc==='todos' || Number(o.escolaId)===Number(fEsc))
   );
   list.sort((a,b)=> b.atualizadoEm.localeCompare(a.atualizadoEm));
 
@@ -4537,7 +4545,7 @@ function populateDispFilters(){
   if(selT.options.length<=1){
     selT.innerHTML = '<option value="todos">Todos os técnicos</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   }
-  if(!document.getElementById('dispData').value) document.getElementById('dispData').value = iso(today);
+  document.getElementById('dispData').value = iso(today);
 }
 function dispRangeFromPeriodo(dISO, periodo){
   const d = new Date(dISO+'T00:00:00');
