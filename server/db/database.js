@@ -234,6 +234,21 @@ async function initSchema() {
     try { await db.execute('ALTER TABLE saldo_logistica ADD COLUMN categoria VARCHAR(20) NOT NULL DEFAULT \'tecnicos\''); } catch (_) {}
     try { await db.execute('ALTER TABLE gastos_logistica ADD COLUMN categoria VARCHAR(20) NOT NULL DEFAULT \'tecnicos\''); } catch (_) {}
 
+    await db.execute(`CREATE TABLE IF NOT EXISTS gastos_escolas (
+      gasto_id INT NOT NULL,
+      escola_id INT NOT NULL,
+      PRIMARY KEY (gasto_id, escola_id),
+      INDEX idx_ge_escola (escola_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    try {
+      await db.execute(`
+        INSERT IGNORE INTO gastos_escolas (gasto_id, escola_id)
+        SELECT id, escola_id FROM gastos_logistica
+        WHERE escola_id IS NOT NULL AND escola_id > 0
+      `);
+    } catch (_) {}
+
     console.log('MySQL schema initialized successfully');
   } finally {
     db.release();
