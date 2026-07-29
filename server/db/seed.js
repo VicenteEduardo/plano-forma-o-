@@ -14,7 +14,7 @@ function localISO(d) {
 async function seed() {
   const dbDrop = await getDb();
   try {
-    const tables = ['saldo_logistica','gastos_logistica','ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
+    const tables = ['saldo_logistica','gastos_logistica','gastos_escolas','ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
     for (const t of tables) await dbDrop.execute(`DROP TABLE IF EXISTS ${t}`);
   } finally {
     dbDrop.release();
@@ -135,6 +135,14 @@ async function seed() {
     await gastoStmt.execute([3, 3, 'Formação', 12000, shiftDate(today,-2), 'Formação de professores — material impresso', shiftDate(today,-2), 'comerciais']);
     await gastoStmt.execute([4, 4, 'Apresentação do Sistema', 7500, shiftDate(today,-3), 'Apresentação no Instituto Politécnico', shiftDate(today,-3), 'tecnicos']);
     await gastoStmt.execute([6, 1, 'Outros', 4000, shiftDate(today,-1), 'Transporte e refeições comercial', shiftDate(today,-1), 'comerciais']);
+
+    const geStmt = await db.prepare('INSERT IGNORE INTO gastos_escolas (gasto_id, escola_id) VALUES (?, ?)');
+    await geStmt.execute([1, 5]);
+    await geStmt.execute([2, 5]);
+    await geStmt.execute([3, 8]);
+    await geStmt.execute([4, 3]);
+    await geStmt.execute([5, 4]);
+    await geStmt.execute([6, 1]);
 
     console.log('MySQL seed completed successfully!');
   } finally {

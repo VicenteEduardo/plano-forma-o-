@@ -27,6 +27,19 @@ router.get('/', async (req, res, next) => {
         if (!escolasMap[r.gasto_id]) escolasMap[r.gasto_id] = [];
         escolasMap[r.gasto_id].push({ id: r.escola_id, nome: r.escola_nome });
       });
+
+      const missingIds = rows.filter(r => !escolasMap[r.id] && r.escola_id).map(r => r.escola_id);
+      if (missingIds.length) {
+        const mPlaceholders = [...new Set(missingIds)].map(() => '?').join(',');
+        const escolas = await query(`SELECT id, nome FROM escolas WHERE id IN (${mPlaceholders})`, [...new Set(missingIds)]);
+        const escolaNomeMap = {};
+        escolas.forEach(e => { escolaNomeMap[e.id] = e.nome; });
+        rows.forEach(r => {
+          if (!escolasMap[r.id] && r.escola_id) {
+            escolasMap[r.id] = [{ id: r.escola_id, nome: escolaNomeMap[r.escola_id] || '' }];
+          }
+        });
+      }
     }
 
     res.json(rows.map(r => ({

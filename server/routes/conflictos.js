@@ -14,7 +14,7 @@ router.get('/', async (req, res, next) => {
     const conflitos = [];
 
     for (const tid of techIds) {
-      let evtSql = "SELECT * FROM eventos WHERE (tecnico_id=? OR evento_id IN (SELECT evento_id FROM evento_tecnicos WHERE tecnico_id=?)) AND data=? AND estado != 'Cancelado'";
+      let evtSql = "SELECT * FROM eventos WHERE (tecnico_id=? OR id IN (SELECT evento_id FROM evento_tecnicos WHERE tecnico_id=?)) AND data=? AND estado != 'Cancelado'";
       let evtParams = [tid, tid, data];
 
       if (excluir_evento_id) {

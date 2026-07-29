@@ -2152,10 +2152,14 @@ function initSchoolSelect(wrapperId, hiddenInputId, opts={}){
           <div class="ss-item-code">${e.codigo}</div>
         </div>
       </div>`).join('') : `<div class="ss-empty"><i class="bi bi-search d-block mb-1" style="font-size:18px;"></i>Nenhuma escola encontrada</div>`;
-    html += `<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;"><button type="button" class="btn btn-sm btn-brand w-100 ss-create-btn" onclick="event.stopPropagation(); openNovaEscolaModal('${(input.value||'').replace(/'/g,"\\'")}')"><i class="bi bi-plus-lg me-1"></i>Criar nova escola</button></div>`;
+    html += `<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;"><button type="button" class="btn btn-sm btn-brand w-100 ss-create-btn" data-prefill="${(input.value||'').replace(/"/g,'&quot;')}"><i class="bi bi-plus-lg me-1"></i>Criar nova escola</button></div>`;
     results.innerHTML = html;
     results.querySelectorAll('.ss-item').forEach(it=>{
       it.addEventListener('click', ()=> selectEscola(Number(it.dataset.id)));
+    });
+    results.querySelector('.ss-create-btn')?.addEventListener('click', ev=>{
+      ev.stopPropagation();
+      openNovaEscolaModal(ev.currentTarget.dataset.prefill||'');
     });
   }
   function selectEscola(id){
@@ -2296,7 +2300,7 @@ function initMultiSchoolSelect(wrapperId, opts={}){
     if(!list.length){
       html += `<div class="ms-empty"><i class="bi bi-search d-block mb-1" style="font-size:18px;"></i>Nenhuma escola encontrada</div>`;
     }
-    html += `<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;"><button type="button" class="btn btn-sm btn-brand w-100" onclick="event.stopPropagation(); openNovaEscolaModal('${(input.value||q||'').replace(/'/g,"\\'")}')"><i class="bi bi-plus-lg me-1"></i>Criar nova escola</button></div>`;
+    html += `<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;"><button type="button" class="btn btn-sm btn-brand w-100 ms-create-btn" data-prefill="${(input.value||q||'').replace(/"/g,'&quot;')}"><i class="bi bi-plus-lg me-1"></i>Criar nova escola</button></div>`;
     results.innerHTML = html;
     results.querySelectorAll('.ms-item').forEach(it=>{
       it.addEventListener('click', ()=>{
@@ -2304,6 +2308,10 @@ function initMultiSchoolSelect(wrapperId, opts={}){
         if(selectedIds.includes(id)) removeSchool(id);
         else addSchoolById(id);
       });
+    });
+    results.querySelector('.ms-create-btn')?.addEventListener('click', ev=>{
+      ev.stopPropagation();
+      openNovaEscolaModal(ev.currentTarget.dataset.prefill||'');
     });
   }
 
@@ -2646,8 +2654,8 @@ function renderDashboard(){
   const wk = currentWeekRange();
   const disponiveis = TECNICOS.filter(t=>t.estado==='Disponível').length;
   const emServico = TECNICOS.filter(t=>t.estado==='Ocupado').length;
-  const eventosHoje = EVENTOS.filter(e=>e.data===iso(today) && e.estado!=='Cancelado').length;
-  const eventosSemana = EVENTOS.filter(e=>e.data>=wk.from && e.data<=wk.to && e.estado!=='Cancelado').length;
+  const eventosHoje = EVENTOS.filter(e=>e.data===iso(today) && e.estado!=='Cancelado').length + REUNIOES.filter(r=>r.data===iso(today) && r.estado!=='Cancelada').length;
+  const eventosSemana = EVENTOS.filter(e=>e.data>=wk.from && e.data<=wk.to && e.estado!=='Cancelado').length + REUNIOES.filter(r=>r.data>=wk.from && r.data<=wk.to && r.estado!=='Cancelada').length;
 
   const statsAll = TECNICOS.map(t=>({t, stats: occupancyStats(t, wk.from, wk.to)}));
   const sobrecarregados = statsAll.filter(s=>s.stats.pct>=85 && s.t.estado!=='Inativo' && s.t.estado!=='Férias');
@@ -2663,15 +2671,19 @@ function renderDashboard(){
   document.getElementById('kpiTotalTecnicos').textContent = TECNICOS.length;
   document.getElementById('kpiOcupacaoMedia').textContent = ocupacaoMedia+'%';
 
-  // proximos eventos
-  const proximos = EVENTOS.filter(e=> (e.data>iso(today)) || (e.data===iso(today)))
-    .filter(e=>e.estado!=='Cancelado' && e.estado!=='Concluído')
+  // proximos eventos + reunioes
+  const hoje = iso(today);
+  const proximosEvts = EVENTOS.filter(e=> (e.data>hoje || e.data===hoje) && e.estado!=='Cancelado' && e.estado!=='Concluído');
+  const proximosReus = REUNIOES.filter(r=> (r.data>hoje || r.data===hoje) && r.estado!=='Cancelada')
+    .map(r=>({ id: 'reu-'+r.id, titulo: 'Reunião Estratégica', data: r.data, horaInicio: r.horaInicio, horaFim: r.horaFim, estado: r.estado, tecnicoId: r.tecnicoId, escolaId: r.escolaId, local: '', tipo: 'Reunião', observacoes: '', prioridade: 'Média', responsavel: '', descricao: '' }));
+  const proximos = [...proximosEvts, ...proximosReus]
     .sort((a,b)=> (a.data+a.horaInicio).localeCompare(b.data+b.horaInicio)).slice(0,6);
   const cont = document.getElementById('listaProximosEventos');
   cont.innerHTML = proximos.length? proximos.map(e=>{
     const t = techById(e.tecnicoId);
     const esc = e.escolaId ? escolaById(e.escolaId) : null;
-    return `<div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid var(--line);">
+    const isReu = e.id?.toString().startsWith('reu-');
+    return `<div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid var(--line);${isReu ? 'cursor:pointer;' : ''}" ${isReu ? `onclick="openReuniaoModal(${e.id.toString().replace('reu-','')})"` : ''}>
       <div style="width:4px; height:38px; border-radius:4px; background:${typeHex(e.tipo)};"></div>
       ${esc ? `<img src="${escolaLogo(esc)}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid var(--line);" onerror="escolaImgOnError(this,escolaById(${esc.id}))">` : ''}
       <div class="flex-grow-1">
@@ -2683,7 +2695,7 @@ function renderDashboard(){
         <div style="font-size:11.5px; color:var(--ink-500);">${e.horaInicio} - ${e.horaFim}</div>
       </div>
     </div>`;
-  }).join('') : `<div class="empty-state"><i class="bi bi-calendar-check"></i>Sem eventos futuros agendados</div>`;
+  }).join('') : `<div class="empty-state"><i class="bi bi-calendar-check"></i>Sem eventos ou reuniões futuras</div>`;
 
   // carga por tecnico
   const cargaCont = document.getElementById('listaCargaTecnicos');
