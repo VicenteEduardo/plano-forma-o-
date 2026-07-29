@@ -3284,7 +3284,7 @@ function openEventModal(id, prefillData, prefillHora){
     document.getElementById('evtObservacoes').value = e.observacoes||'';
     _schoolSelects['ssWrapEvtEscola'].__setValue(e.escolaId||null);
     delBtn.classList.remove('d-none');
-    delBtn.onclick = ()=>{ if(confirm('Remover este evento?')){ apiDelete('/eventos/'+id).then(()=>{ eventModal.hide(); loadAllData().then(()=> refreshAll()); showToast('Evento removido com sucesso.','success'); }).catch(e=>{ console.error('Erro ao remover evento:', e); showToast('Erro ao remover evento: '+e.message,'error'); }); } };
+    delBtn.dataset.evtId = id;
   } else {
     document.getElementById('eventModalTitle').textContent = 'Novo evento';
     document.getElementById('eventForm').reset();
@@ -3298,6 +3298,20 @@ function openEventModal(id, prefillData, prefillHora){
   checkEvtConflict();
   eventModal.show();
 }
+document.getElementById('evtDeleteBtn').addEventListener('click', async ()=>{
+  const id = Number(document.getElementById('evtDeleteBtn').dataset.evtId);
+  if(!id || !confirm('Remover este evento?')) return;
+  try {
+    await apiDelete('/eventos/'+id);
+    eventModal.hide();
+    await loadAllData();
+    refreshAll();
+    showToast('Evento removido com sucesso.','success');
+  } catch(e){
+    console.error('Erro ao remover evento:', e);
+    showToast('Erro ao remover evento: '+e.message,'error');
+  }
+});
 ['evtData','evtTecnico'].forEach(id=>{
   document.getElementById(id).addEventListener('change', checkEvtConflict);
 });
