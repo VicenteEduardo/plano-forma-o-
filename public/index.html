@@ -5245,7 +5245,8 @@ function openGastoModal(id){
       document.getElementById('gastoId').value = g.id;
       document.getElementById('gastoCategoria').value = g.categoria||'tecnicos';
       document.getElementById('gastoTecnico').value = g.tecnicoId||'';
-      _multiSchoolSelects['ssWrapGastoEscola'].__setIds((g.escolas||[]).map(e=>e.id));
+      const escolaIds = (g.escolas||[]).map(e=>e.id).filter(Boolean);
+      _multiSchoolSelects['ssWrapGastoEscola'].__setIds(escolaIds);
       document.getElementById('gastoTipo').value = g.tipo;
       document.getElementById('gastoValor').value = g.valor;
       document.getElementById('gastoData').value = g.data;

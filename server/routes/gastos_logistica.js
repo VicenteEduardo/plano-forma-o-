@@ -55,6 +55,38 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.get('/:id', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT g.*, t.nome as tecnico_nome
+       FROM gastos_logistica g
+       LEFT JOIN tecnicos t ON t.id = g.tecnico_id
+       WHERE g.id=?`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    const r = rows[0];
+    const escRows = await query(
+      `SELECT e.id as escola_id, e.nome as escola_nome
+       FROM gastos_escolas ge
+       JOIN escolas e ON e.id = ge.escola_id
+       WHERE ge.gasto_id=?`,
+      [req.params.id]
+    );
+    let escolas = escRows.map(e => ({ id: e.escola_id, nome: e.escola_nome }));
+    if (!escolas.length && r.escola_id) {
+      const esc = await queryOne('SELECT id, nome FROM escolas WHERE id=?', [r.escola_id]);
+      if (esc) escolas = [{ id: esc.id, nome: esc.nome }];
+    }
+    res.json({
+      id: r.id, tecnicoId: r.tecnico_id, tecnicoNome: r.tecnico_nome,
+      escolas, tipo: r.tipo, valor: Number(r.valor), data: r.data,
+      observacoes: r.observacoes, criadoEm: r.criado_em,
+      categoria: r.categoria || 'tecnicos',
+    });
+  } catch (err) { next(err); }
+});
+
 router.get('/resumo', async (req, res, next) => {
   try {
     let porTipo = [], porTecnico = [], total = { total: 0, cnt: 0 };
