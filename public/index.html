@@ -2103,7 +2103,7 @@ function techFotoError(img, tid, size, extraStyle){
    ESCOLAS / CLIENTES (mestre) + SEARCH SELECT reutilizável
 ========================================================================= */
 let ESCOLAS = [];
-function escolaById(id){ return ESCOLAS.find(e=>e.id===Number(id)); }
+function escolaById(id){ return ESCOLAS.find(e=>String(e.id)===String(id)); }
 function escolaLogoFallback(esc){
   return `https://ui-avatars.com/api/?background=EEECFF&color=453FCB&bold=true&size=128&name=${encodeURIComponent((esc&&esc.nome||'?').substring(0,2))}`;
 }
