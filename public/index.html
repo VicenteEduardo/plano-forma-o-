@@ -4311,13 +4311,40 @@ document.getElementById('planoDeleteBtn').addEventListener('click', async ()=>{
   }catch(e){ console.error('Erro ao remover plano:', e); showToast('Erro ao remover plano: ' + e.message,'error'); }
 });
 
-document.getElementById('planoPdfBtn').addEventListener('click', ()=>{
+document.getElementById('planoPdfBtn').addEventListener('click', async ()=>{
   const dados = coletarDadosPlano();
   if(!dados.escolaId){ showToast('Indica a escola/cliente do plano.','warning'); return; }
   if(!dados.linhas.length){ showToast('Adiciona pelo menos uma linha ao plano.','warning'); return; }
-  dados.id = editingPlanoId || nextPlanoId;
-  dados.criadoEm = editingPlanoId ? (PLANOS_FORMACAO.find(p=>p.id===editingPlanoId)||{}).criadoEm : iso(today);
-  gerarPlanoFormacaoPDF(dados);
+  const allConflicts = [];
+  dados.linhas.forEach(l=>{
+    if(!l.tecnicoId || !l.data) return;
+    const hora = l.hora||'09:00';
+    const dur = parseDuracaoMin(l.duracao);
+    const fimMin = timeToMin(hora)+dur;
+    const hfStr = Math.floor(fimMin/60)+':'+String(fimMin%60).padStart(2,'0');
+    const c = checkTechConflict(l.tecnicoId, l.data, hora, hfStr, 'plano', editingPlanoId);
+    const tech = techById(l.tecnicoId);
+    c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora}) em ${fmtDatePt(l.data)}`));
+  });
+  if(allConflicts.length){ showToast('Conflitos de horário detectados:\n'+allConflicts.join('\n'),'warning'); return; }
+  try {
+    if(editingPlanoId){
+      await apiPut('/planos/'+editingPlanoId, dados);
+    } else {
+      editingPlanoId = nextPlanoId;
+      await apiPost('/planos', dados);
+      document.getElementById('planoDeleteBtn').classList.remove('d-none');
+    }
+    await loadAllData();
+    renderPlanosHistorico();
+    renderDashboard();
+    dados.id = editingPlanoId;
+    dados.criadoEm = dados.criadoEm || iso(today);
+    gerarPlanoFormacaoPDF(dados);
+  } catch(e){
+    console.error('Erro ao guardar plano para PDF:', e);
+    showToast('Erro ao guardar: '+e.message,'error');
+  }
 });
 
 /* ---------- PDF Utilities ---------- */
