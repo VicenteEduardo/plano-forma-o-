@@ -2090,8 +2090,13 @@ function avatarColor(id){ return AVATAR_COLORS[id % AVATAR_COLORS.length]; }
 function techFotoEl(t, size, extraStyle=''){
   if(!t) return '';
   const s = size || 32;
-  if(t.foto) return `<img src="${t.foto}" alt="${t.nome}" style="width:${s}px;height:${s}px;border-radius:50%;object-fit:cover;flex-shrink:0;${extraStyle}">`;
+  if(t.foto) return `<img src="${t.foto}" alt="${t.nome}" data-tid="${t.id}" style="width:${s}px;height:${s}px;border-radius:50%;object-fit:cover;flex-shrink:0;${extraStyle}" onerror="techFotoError(this,${t.id},${s},'${extraStyle.replace(/'/g,"\\'")}')">`;
   return `<div class="avatar" style="width:${s}px;height:${s}px;font-size:${Math.round(s*0.38)}px;background:${avatarColor(t.id)};${extraStyle}">${initials(t.nome)}</div>`;
+}
+function techFotoError(img, tid, size, extraStyle){
+  const t = TECNICOS.find(x=>x.id===tid);
+  if(!t){ img.outerHTML='<span style="color:red">?</span>'; return; }
+  img.outerHTML = `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.38)}px;background:${avatarColor(t.id)};${extraStyle}">${initials(t.nome)}</div>`;
 }
 
 /* =========================================================================
