@@ -523,6 +523,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         <div class="nav-pill" data-view="planos"><i class="bi bi-clock-history"></i> Planos</div>
         <div class="nav-pill" data-view="disponibilidade"><i class="bi bi-calendar2-check-fill"></i> Disponibilidade</div>
         <div class="nav-pill" data-view="reunioes"><i class="bi bi-people-fill"></i> Reuniões</div>
+        <div class="nav-pill" data-view="acessos"><i class="bi bi-key-fill"></i> Acessos</div>
         <div class="nav-pill" data-view="gastos"><i class="bi bi-cash-stack"></i> Gastos</div>
       </div>
       <div class="topnav-actions">
@@ -962,6 +963,32 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         </div>
       </section>
 
+      <section class="section-view" id="view-acessos">
+        <div class="filter-bar">
+          <input type="text" class="form-control" id="acesSearch" placeholder="Pesquisar por escola, utilizador ou tipo...">
+          <select class="form-select" id="acesFiltroEscola"><option value="todos">Todas as escolas</option></select>
+          <button class="btn btn-brand btn-sm" onclick="openAcessoModal()"><i class="bi bi-key me-1"></i>Novo acesso</button>
+          <span class="chip chip-muted" id="acesCount">0 acessos</span>
+        </div>
+        <div class="panel p-0">
+          <div class="table-responsive">
+            <table class="table table-modern mb-0">
+              <thead>
+                <tr>
+                  <th class="sortable" data-key="escola">Escola <i class="bi bi-arrow-down-up"></i></th>
+                  <th>Utilizador</th>
+                  <th>Password</th>
+                  <th>Tipo de acesso</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaAcessosBody"></tbody>
+            </table>
+          </div>
+          <div class="pg-bar" id="pgAcessos"></div>
+        </div>
+      </section>
+
       <section class="section-view" id="view-gastos">
         <div class="filter-bar">
           <select class="form-select" id="gastosFilterCategoria" style="max-width:180px;">
@@ -1391,6 +1418,14 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             <div class="col-12">
               <label class="form-label">Nota de resolução <span class="text-muted fw-normal">(preencher quando resolvido)</span></label>
               <textarea class="form-control" id="ocorResolucao" rows="2" placeholder="O que foi feito para resolver o problema..."></textarea>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Comentário do incidente <span class="text-muted fw-normal">(opcional)</span></label>
+              <textarea class="form-control" id="ocorComentario" rows="3" placeholder="Comentário adicional sobre o incidente..."></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Comentado por <span class="text-muted fw-normal">(técnico)</span></label>
+              <select class="form-select" id="ocorComentarioTecnico"><option value="">Não atribuído</option></select>
             </div>
           </div>
         </form>
@@ -1832,6 +1867,63 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<div class="modal fade" id="acessoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold mb-0" id="acessoModalTitle"><i class="bi bi-key me-1"></i>Novo Acesso</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Credenciais de acesso da escola ao sistema — vários acessos por escola</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <input type="hidden" id="acesId">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Escola <span class="text-danger">*</span></label>
+            <div class="ss-control" id="ssWrapAcesEscola">
+              <input type="hidden" id="acesEscolaId">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tipo de acesso <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="acesTipo" list="acesTipoSuggest" placeholder="Ex: Administrador, Direção, Professor...">
+            <datalist id="acesTipoSuggest">
+              <option value="Administrador">
+              <option value="Direção">
+              <option value="Professor">
+              <option value="Secretária">
+              <option value="Gestor Financeiro">
+              <option value="Aluno">
+            </datalist>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Utilizador (username) <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="acesUsername" placeholder="Ex: admin.escola">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="acesPassword" placeholder="••••••••">
+              <button type="button" class="btn btn-light border" onclick="toggleAcesPassword()" title="Mostrar/ocultar password"><i class="bi bi-eye" id="acesEyeIcon"></i></button>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Observações <span class="text-muted fw-normal">(opcional)</span></label>
+            <textarea class="form-control" id="acesObservacoes" rows="2" placeholder="Ex: acesso de leitura, ligação remota, utilizador do portal..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-danger me-auto d-none" id="acesDeleteBtn"><i class="bi bi-trash me-1"></i>Remover</button>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-brand" id="acesSaveBtn"><i class="bi bi-check-lg me-1"></i>Guardar acesso</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="novaEscolaModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -2022,7 +2114,7 @@ async function apiUpload(url, fieldName, fileOrFiles){
 }
 
 async function loadAllData(){
-  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo global','saldo entries'];
+  const endpointNames = ['escolas','tecnicos','eventos','ausências','reuniões','planos','notas','ocorrências','gastos','saldo global','saldo entries','acessos'];
   let loaded = 0, dashRendered = false;
   const assign = [
     d => { ESCOLAS = d; },
@@ -2036,11 +2128,13 @@ async function loadAllData(){
     d => { GASTOS = d; },
     d => { SALDO_GLOBAL = d; },
     d => { SALDO_ENTRIES = d; },
+    d => { ACESSOS = d; },
   ];
   const urls = [
     ESCOLAS.length ? null : '/escolas',
     '/tecnicos', '/eventos', '/ausencias', '/reunioes', '/planos', '/notas', '/ocorrencias',
     '/gastos-logistica', '/saldo-logistica/global', '/saldo-logistica',
+    '/acessos',
   ];
   const finishOne = (i)=>{
     loaded++;
@@ -2055,6 +2149,7 @@ async function loadAllData(){
     nextPlanoId = Math.max(0,...PLANOS_FORMACAO.map(p=>p.id),0)+1;
     nextNotaId = Math.max(0,...NOTAS.map(n=>n.id),0)+1;
     nextOcorId = Math.max(0,...OCORRENCIAS.map(o=>o.id),0)+1;
+    nextAcessoId = Math.max(0,...ACESSOS.map(a=>a.id),0)+1;
   }
   const promises = urls.map((u,i)=>{
     if(!u){ assign[i](ESCOLAS); finishOne(i); return Promise.resolve(); }
@@ -2536,22 +2631,23 @@ function checkTechConflict(techId, dateISO, hi, hf, excludeEventType, excludeEve
     if(isTechAssignedToEvent(tid, e) && e.data===dateISO && e.estado!=='Cancelado'){
       if(excludeEventType==='evento' && excludeEventId && e.id===excludeEventId) return;
       const eS=timeToMin(e.horaInicio), eF=timeToMin(e.horaFim);
-      if(newStart<eF && newEnd>eS) conflicts.push({tipo:'Evento', titulo:e.titulo||'Sem título', hora:`${e.horaInicio}-${e.horaFim}`});
+      if(newStart<eF && newEnd>eS) conflicts.push({tipo:'Evento', titulo:e.titulo||'Sem título', hora:`${e.horaInicio}-${e.horaFim}`, escola: e.escolaId ? (escolaById(e.escolaId)?.nome||'') : ''});
     }
   });
   REUNIOES.forEach(r=>{
     if(isTechAssignedToReuniao(tid, r) && r.data===dateISO && r.estado!=='Cancelada'){
       if(excludeEventType==='reuniao' && excludeEventId && r.id===excludeEventId) return;
       const rS=timeToMin(r.horaInicio), rF=timeToMin(r.horaFim);
-      if(newStart<rF && newEnd>rS) conflicts.push({tipo:'Reunião', titulo:r.titulo||'Sem título', hora:`${r.horaInicio}-${r.horaFim}`});
+      if(newStart<rF && newEnd>rS) conflicts.push({tipo:'Reunião', titulo:r.titulo||'Sem título', hora:`${r.horaInicio}-${r.horaFim}`, escola: r.escolaId ? (escolaById(r.escolaId)?.nome||'') : ''});
     }
   });
   PLANOS_FORMACAO.forEach(p=>{
+    if(excludeEventType==='plano' && excludeEventId && Number(p.id)===Number(excludeEventId)) return;
     (p.linhas||[]).forEach(l=>{
       if(l.tecnicoId===tid && l.data===dateISO){
         const pHora=l.hora||'09:00', pMin=parseDuracaoMin(l.duracao);
         const pS=timeToMin(pHora), pF=pS+pMin;
-        if(newStart<pF && newEnd>pS) conflicts.push({tipo:'Formação', titulo:l.objetivo||p.nome||'Sem título', hora:`${pHora} (${l.duracao||'1h'})`});
+        if(newStart<pF && newEnd>pS) conflicts.push({tipo:'Formação', titulo:l.objetivo||p.nome||'Sem título', hora:`${pHora} (${l.duracao||'1h'})`, escola: p.escolaId ? (escolaById(p.escolaId)?.nome||'') : ''});
       }
     });
   });
@@ -2620,6 +2716,7 @@ const pageMeta = {
   planos:{title:'Histórico de Planos de Formação', sub:'Todos os planos por escola — versões, estados e PDFs gerados'},
   disponibilidade:{title:'Dashboard de Disponibilidade', sub:'Disponibilidade em tempo real de todos os colaboradores'},
   reunioes:{title:'Reuniões Estratégicas', sub:'Reuniões entre escolas, direção e equipa Eduall'},
+  acessos:{title:'Acessos às Escolas', sub:'Credenciais de acesso por escola — vários acessos por escola'},
   gastos:{title:'Gastos de Logística', sub:'Gestão de despesas operacionais e saldos dos técnicos'},
 };
 document.querySelectorAll('.nav-pill').forEach(el=>{
@@ -2629,6 +2726,11 @@ document.querySelectorAll('.nav-pill').forEach(el=>{
       const pwd = prompt('Digite a senha para aceder aos Gastos:');
       if(pwd !== 'Eduall@2026'){ showToast('Senha incorreta.', 'error'); return; }
       window._gastosUnlocked = true;
+    }
+    if(view==='acessos' && !window._acessosUnlocked){
+      const pwd = prompt('Digite a senha para aceder aos Acessos:');
+      if(pwd !== 'tecnicos@2026'){ showToast('Senha incorreta.', 'error'); return; }
+      window._acessosUnlocked = true;
     }
     document.querySelectorAll('.nav-pill').forEach(n=>n.classList.remove('active'));
     el.classList.add('active');
@@ -2646,6 +2748,7 @@ document.querySelectorAll('.nav-pill').forEach(el=>{
       if(view==='planos') renderPlanosHistorico();
       if(view==='disponibilidade') renderDisponibilidade();
       if(view==='reunioes') renderReunioes();
+      if(view==='acessos') renderAcessos();
       if(view==='gastos') renderGastos();
     }catch(e){ console.error('Nav render error:', e); }
   });
@@ -3334,7 +3437,7 @@ document.getElementById('evtSaveBtn').addEventListener('click', async ()=>{
     const editingEvtId = document.getElementById('evtId').value || null;
     const conflitos = checkTechConflict(tecnicoId, data, hi, hf, 'evento', editingEvtId ? Number(editingEvtId) : null);
     if(conflitos.length){
-      const detalhes = conflitos.map(c=>`• ${c.tipo}: ${c.titulo} (${c.hora})`).join('\n');
+      const detalhes = conflitos.map(c=>`• ${c.tipo}: ${c.titulo} (${c.hora})${c.escola?` — ${c.escola}`:''}`).join('\n');
       showToast(`Conflito de horário detectado!\n${detalhes}`,'warning'); return;
     }
 
@@ -3780,6 +3883,8 @@ function ocorEstadoChip(e){
 function populateOcorSelects(){
   const selTec = document.getElementById('ocorTecnico');
   selTec.innerHTML = '<option value="">Não atribuído</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  const selCom = document.getElementById('ocorComentarioTecnico');
+  selCom.innerHTML = '<option value="">Não atribuído</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   const selEvt = document.getElementById('ocorEvento');
   const eventosOrdenados = [...EVENTOS].sort((a,b)=> b.data.localeCompare(a.data));
   selEvt.innerHTML = '<option value="">Nenhum</option>' + eventosOrdenados.map(e=>`<option value="${e.id}">${fmtDatePt(e.data)} · ${e.titulo}</option>`).join('');
@@ -3807,6 +3912,8 @@ function openOcorrenciaModal(id){
       document.getElementById('ocorGravidade').value = o.gravidade;
       document.getElementById('ocorEstado').value = o.estado;
       document.getElementById('ocorResolucao').value = o.resolucao||'';
+      document.getElementById('ocorComentario').value = o.comentario||'';
+      document.getElementById('ocorComentarioTecnico').value = o.comentarioTecnicoId||'';
       loadOcorMedia(id).then(()=>{ renderOcorGallery(); renderOcorVideoPreview(); });
       document.getElementById('ocorDeleteBtn').classList.remove('d-none');
       document.getElementById('ocorSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar ocorrência';
@@ -3848,6 +3955,8 @@ function resetOcorForm(){
   document.getElementById('ocorPrioridade').value = 'Média';
   document.getElementById('ocorGravidade').value = 'Moderada';
   document.getElementById('ocorEstado').value = 'Aberta';
+  document.getElementById('ocorComentario').value = '';
+  document.getElementById('ocorComentarioTecnico').value = '';
   document.getElementById('ocorFotoInput').value = '';
   document.getElementById('ocorVideoInput').value = '';
   document.getElementById('ocorModalTitle').innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i>Nova ocorrência';
@@ -3953,6 +4062,8 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
       gravidade: document.getElementById('ocorGravidade').value,
       estado: document.getElementById('ocorEstado').value,
       resolucao: document.getElementById('ocorResolucao').value.trim(),
+      comentario: document.getElementById('ocorComentario').value.trim(),
+      comentarioTecnicoId: document.getElementById('ocorComentarioTecnico').value ? Number(document.getElementById('ocorComentarioTecnico').value) : null,
       fotos: [...pendingOcorFotos],
       video: pendingOcorVideo,
     };
@@ -4020,6 +4131,7 @@ function renderOcorrencias(){
   }
   cont.innerHTML = list.map(o=>{
     const t = techById(o.tecnicoId);
+    const comT = o.comentarioTecnicoId ? techById(o.comentarioTecnicoId) : null;
     const evt = o.eventoId ? EVENTOS.find(e=>e.id===o.eventoId) : null;
     let media = '';
     if(o.fotosCount > 0){
@@ -4052,6 +4164,7 @@ function renderOcorrencias(){
             ${evt? ` · <i class="bi bi-calendar-event me-1"></i>${evt.titulo}` : ''}
           </div>
           ${o.estado==='Resolvida' && o.resolucao? `<div class="mt-2" style="font-size:12px; background:var(--ok-bg); color:var(--ok); border-radius:8px; padding:6px 10px;"><i class="bi bi-check-circle-fill me-1"></i>${o.resolucao}</div>` : ''}
+          ${o.comentario? `<div class="mt-2" style="font-size:12px; background:#EEF0F7; color:var(--ink-700); border-radius:8px; padding:6px 10px;"><i class="bi bi-chat-left-text me-1"></i>${o.comentario}${comT? `<span class="text-muted fw-normal" style="white-space:nowrap;"> — ${comT.nome}</span>`:''}</div>` : ''}
         </div>
         <div class="d-flex flex-column gap-1 flex-shrink-0">
           ${(o.fotosCount > 0 || o.hasVideo) ? `<button class="btn btn-sm btn-light border" onclick="openOcorViewer(${o.id})"><i class="bi bi-eye me-1"></i>Ver</button>` : ''}
@@ -4284,9 +4397,10 @@ document.getElementById('planoSaveBtn').addEventListener('click', async ()=>{
       const hfStr = Math.floor(fimMin/60)+':'+String(fimMin%60).padStart(2,'0');
       const c = checkTechConflict(l.tecnicoId, l.data, hora, hfStr, 'plano', editingPlanoId);
       const tech = techById(l.tecnicoId);
-      c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora}) em ${fmtDatePt(l.data)}`));
+      c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora})${x.escola?` — ${x.escola}`:''} em ${fmtDatePt(l.data)}`));
     });
-    if(allConflicts.length){ showToast('Conflitos de horário detectados:\n'+allConflicts.join('\n'),'warning'); return; }
+    const unicos = [...new Set(allConflicts)];
+    if(unicos.length){ showToast('Conflitos de horário detectados:\n'+unicos.join('\n'),'warning'); return; }
     if(editingPlanoId){
       await apiPut('/planos/'+editingPlanoId, dados);
     } else {
@@ -4324,9 +4438,10 @@ document.getElementById('planoPdfBtn').addEventListener('click', async ()=>{
     const hfStr = Math.floor(fimMin/60)+':'+String(fimMin%60).padStart(2,'0');
     const c = checkTechConflict(l.tecnicoId, l.data, hora, hfStr, 'plano', editingPlanoId);
     const tech = techById(l.tecnicoId);
-    c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora}) em ${fmtDatePt(l.data)}`));
+    c.forEach(x=> allConflicts.push(`• ${tech?tech.nome:'Técnico #'+l.tecnicoId} — ${x.tipo}: ${x.titulo} (${x.hora})${x.escola?` — ${x.escola}`:''} em ${fmtDatePt(l.data)}`));
   });
-  if(allConflicts.length){ showToast('Conflitos de horário detectados:\n'+allConflicts.join('\n'),'warning'); return; }
+  const unicos = [...new Set(allConflicts)];
+  if(unicos.length){ showToast('Conflitos de horário detectados:\n'+unicos.join('\n'),'warning'); return; }
   try {
     if(editingPlanoId){
       await apiPut('/planos/'+editingPlanoId, dados);
@@ -4952,7 +5067,7 @@ document.getElementById('reuSaveBtn').addEventListener('click', async ()=>{
       const c = checkTechConflict(payload.tecnicoId, dISO, payload.horaInicio, payload.horaFim, 'reuniao', editingReuniaoId);
       if(c.length){
         const tech = techById(payload.tecnicoId);
-        const detalhes = c.map(x=>`• ${x.tipo}: ${x.titulo} (${x.hora})`).join('\n');
+        const detalhes = c.map(x=>`• ${x.tipo}: ${x.titulo} (${x.hora})${x.escola?` — ${x.escola}`:''}`).join('\n');
         showToast(`Conflito de horário para ${tech?tech.nome:'o técnico'}!\n${detalhes}`,'warning'); return;
       }
     }
@@ -5032,6 +5147,167 @@ document.querySelectorAll('#view-reunioes .sortable').forEach(th=>{
 ['reuSearch','reuFilterEstado','reuFilterTecnico'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderReunioes);
   document.getElementById(id).addEventListener('change', renderReunioes);
+});
+
+/* =========================================================================
+   ACESSOS ÀS ESCOLAS
+========================================================================= */
+let ACESSOS = [];
+let nextAcessoId = 1;
+let editingAcessoId = null;
+const acessoModal = new bootstrap.Modal(document.getElementById('acessoModal'));
+const ACESSO_CHIPS = ['chip-info','chip-purple','chip-ok','chip-warning','chip-warn','chip-bad'];
+function escHtml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function acessoTipoChip(tipo){
+  const t = (tipo||'').trim();
+  if(!t) return '<span class="chip chip-muted">—</span>';
+  let h = 0;
+  for(const ch of t) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return `<span class="chip ${ACESSO_CHIPS[h%ACESSO_CHIPS.length]}">${escHtml(t)}</span>`;
+}
+function toggleAcesPassword(){
+  const inp = document.getElementById('acesPassword');
+  const ic = document.getElementById('acesEyeIcon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  ic.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+}
+function toggleAcesRowPw(id){
+  const span = document.getElementById('pw-'+id);
+  if(!span) return;
+  const a = ACESSOS.find(x=>String(x.id)===String(id));
+  if(!a) return;
+  if(span.dataset.show === '1'){ span.textContent = '••••••••'; span.dataset.show = '0'; }
+  else { span.textContent = a.password; span.dataset.show = '1'; }
+}
+function populateAcesFilters(){
+  const sel = document.getElementById('acesFiltroEscola');
+  if(sel.options.length<=1) sel.innerHTML = '<option value="todos">Todas as escolas</option>' + ESCOLAS.map(e=>`<option value="${e.id}">${escHtml(e.nome)}</option>`).join('');
+}
+function renderAcessos(){
+  populateAcesFilters();
+  const search = (document.getElementById('acesSearch').value||'').toLowerCase();
+  const fEscola = document.getElementById('acesFiltroEscola').value;
+
+  let list = ACESSOS.filter(a=>{
+    const esc = escolaById(a.escolaId);
+    const hay = ((esc?esc.nome:'')+' '+(esc?esc.codigo:'')+' '+(a.username||'')+' '+(a.tipoAcesso||'')+' '+(a.observacoes||'')).toLowerCase();
+    return (!search || hay.includes(search)) && (fEscola==='todos' || String(a.escolaId)===String(fEscola));
+  });
+  list.sort((a,b)=>{
+    let va,vb;
+    if(acesSortKey==='escola'){ va=(escolaById(a.escolaId)||{}).nome||''; vb=(escolaById(b.escolaId)||{}).nome||''; }
+    else { va=(a.username||''); vb=(b.username||''); }
+    return va>vb? acesSortDir : va<vb? -acesSortDir : 0;
+  });
+
+  document.getElementById('acesCount').textContent = list.length + ' acesso' + (list.length!==1?'s':'');
+  const tbody = document.getElementById('tabelaAcessosBody');
+  if(!list.length){
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state py-4"><i class="bi bi-key"></i>Nenhum acesso encontrado</div></td></tr>`;
+    document.getElementById('pgAcessos').innerHTML=''; return;
+  }
+  const meta = paginateSlice(list, 'acessos', 10);
+  renderPaginationBar('pgAcessos','acessos', meta, renderAcessos);
+  list = meta.slice;
+  tbody.innerHTML = list.map(a=>{
+    const hasPw = !!a.password;
+    return `<tr style="cursor:pointer;" onclick="openAcessoModal(${a.id})">
+      <td>${escolaMiniHtml(a.escolaId)}</td>
+      <td class="fw-semibold">${escHtml(a.username||'—')}</td>
+      <td><span id="pw-${a.id}" data-show="0">${hasPw?'••••••••':'—'}</span>
+        ${hasPw? `<button class="btn btn-sm btn-light border ms-1" onclick="event.stopPropagation(); toggleAcesRowPw(${a.id})" title="Mostrar/ocultar password"><i class="bi bi-eye"></i></button>`:''}
+      </td>
+      <td>${acessoTipoChip(a.tipoAcesso)}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openAcessoModal(${a.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); removerAcesso(${a.id})"><i class="bi bi-trash text-danger"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function removerAcesso(id){
+  if(!confirm('Remover este acesso?')) return;
+  apiDelete('/acessos/'+id).then(()=> loadAllData().then(()=> renderAcessos())).catch(e=>{ console.error('Erro ao remover acesso:', e); showToast('Erro ao remover acesso: '+e.message,'error'); });
+}
+function resetAcessoForm(){
+  editingAcessoId = null;
+  document.getElementById('acesId').value = '';
+  if(_schoolSelects['ssWrapAcesEscola']) _schoolSelects['ssWrapAcesEscola'].__setValue(null);
+  document.getElementById('acesUsername').value = '';
+  document.getElementById('acesPassword').value = '';
+  document.getElementById('acesTipo').value = '';
+  document.getElementById('acesObservacoes').value = '';
+  document.getElementById('acessoModalTitle').innerHTML = '<i class="bi bi-key me-1"></i>Novo Acesso';
+}
+document.getElementById('acessoModal').addEventListener('hidden.bs.modal', resetAcessoForm);
+function openAcessoModal(id){
+  if(!_schoolSelects['ssWrapAcesEscola']) initSchoolSelect('ssWrapAcesEscola','acesEscolaId',{placeholder:'Selecionar escola / cliente...'});
+  resetAcessoForm();
+  document.getElementById('acesDeleteBtn').classList.add('d-none');
+  if(id){
+    const a = ACESSOS.find(x=>x.id===id);
+    if(a){
+      editingAcessoId = id;
+      document.getElementById('acessoModalTitle').innerHTML = '<i class="bi bi-key me-1"></i>Editar Acesso';
+      document.getElementById('acesId').value = a.id;
+      _schoolSelects['ssWrapAcesEscola'].__setValue(a.escolaId||null);
+      document.getElementById('acesUsername').value = a.username||'';
+      document.getElementById('acesPassword').value = a.password||'';
+      document.getElementById('acesTipo').value = a.tipoAcesso||'';
+      document.getElementById('acesObservacoes').value = a.observacoes||'';
+      document.getElementById('acesDeleteBtn').classList.remove('d-none');
+    }
+  }
+  acessoModal.show();
+}
+document.getElementById('acesSaveBtn').addEventListener('click', async ()=>{
+  try{
+    const escolaIdVal = document.getElementById('acesEscolaId').value;
+    const username = document.getElementById('acesUsername').value.trim();
+    const password = document.getElementById('acesPassword').value;
+    const tipoAcesso = document.getElementById('acesTipo').value.trim();
+    const observacoes = document.getElementById('acesObservacoes').value.trim();
+    if(!escolaIdVal){ showToast('Seleciona a escola.','warning'); return; }
+    if(!username){ showToast('Indica o utilizador (username).','warning'); return; }
+    if(!password){ showToast('Indica a password.','warning'); return; }
+    if(!tipoAcesso){ showToast('Preenche o tipo de acesso (label).','warning'); return; }
+    const payload = { escolaId: Number(escolaIdVal), username, password, tipoAcesso, observacoes };
+    if(editingAcessoId){
+      await apiPut('/acessos/'+editingAcessoId, payload);
+    } else {
+      await apiPost('/acessos', payload);
+    }
+    const foiEdicao = !!editingAcessoId;
+    acessoModal.hide();
+    await loadAllData();
+    renderAcessos();
+    showToast(foiEdicao ? 'Acesso atualizado com sucesso.' : 'Acesso guardado com sucesso.', 'success');
+  }catch(e){ console.error('Erro ao guardar acesso:', e); showToast('Erro ao guardar acesso: '+e.message,'error'); }
+});
+document.getElementById('acesDeleteBtn').addEventListener('click', async ()=>{
+  try{
+    if(!editingAcessoId) return;
+    if(!confirm('Remover este acesso?')) return;
+    await apiDelete('/acessos/'+editingAcessoId);
+    acessoModal.hide();
+    await loadAllData();
+    renderAcessos();
+  }catch(e){ console.error('Erro ao remover acesso:', e); showToast('Erro ao remover acesso: '+e.message,'error'); }
+});
+let acesSortKey = 'escola', acesSortDir = 1;
+document.querySelectorAll('#view-acessos .sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(acesSortKey===key) acesSortDir*=-1; else { acesSortKey=key; acesSortDir=1; }
+    renderAcessos();
+  });
+});
+['acesSearch','acesFiltroEscola'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderAcessos);
+  document.getElementById(id).addEventListener('change', renderAcessos);
 });
 
 /* =========================================================================
@@ -5709,6 +5985,7 @@ function refreshAll(){
   if(document.getElementById('view-planos').classList.contains('active')) safe(renderPlanosHistorico, 'renderPlanosHistorico');
   if(document.getElementById('view-disponibilidade').classList.contains('active')) safe(renderDisponibilidade, 'renderDisponibilidade');
   if(document.getElementById('view-reunioes').classList.contains('active')) safe(renderReunioes, 'renderReunioes');
+  if(document.getElementById('view-acessos').classList.contains('active')) safe(renderAcessos, 'renderAcessos');
   if(document.getElementById('view-gastos').classList.contains('active')) safe(renderGastos, 'renderGastos');
 }
 initGlobalSearchSelects();

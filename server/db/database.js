@@ -165,6 +165,18 @@ async function initSchema() {
       INDEX idx_pl_plano (plano_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
+    await db.execute(`CREATE TABLE IF NOT EXISTS acessos_escolas (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      escola_id INT,
+      username VARCHAR(255) NOT NULL DEFAULT '',
+      password VARCHAR(255) NOT NULL DEFAULT '',
+      tipo_acesso VARCHAR(255) NOT NULL DEFAULT '',
+      observacoes TEXT,
+      criado_em VARCHAR(10) NOT NULL,
+      atualizado_em VARCHAR(10) NOT NULL,
+      INDEX idx_ae_escola (escola_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
     await db.execute(`CREATE TABLE IF NOT EXISTS notas (
       id INT AUTO_INCREMENT PRIMARY KEY,
       titulo VARCHAR(255) NOT NULL,
@@ -184,9 +196,14 @@ async function initSchema() {
       gravidade VARCHAR(20) NOT NULL DEFAULT 'Moderada',
       estado VARCHAR(30) NOT NULL DEFAULT 'Aberta',
       resolucao TEXT,
+      comentario TEXT,
+      comentario_tecnico_id INT,
       criado_em VARCHAR(10) NOT NULL,
       atualizado_em VARCHAR(10) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN comentario TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN comentario_tecnico_id INT DEFAULT NULL'); } catch (_) {}
 
     await db.execute(`CREATE TABLE IF NOT EXISTS ocorrencia_fotos (
       id INT AUTO_INCREMENT PRIMARY KEY,

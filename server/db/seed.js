@@ -14,7 +14,7 @@ function localISO(d) {
 async function seed() {
   const dbDrop = await getDb();
   try {
-    const tables = ['saldo_logistica','gastos_logistica','gastos_escolas','ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
+    const tables = ['acessos_escolas','saldo_logistica','gastos_logistica','gastos_escolas','ocorrencia_videos','ocorrencia_fotos','ocorrencias','notas','plano_linhas','planos_formacao','reuniao_historico','reunioes','ausencias','eventos','tecnicos','escolas'];
     for (const t of tables) await dbDrop.execute(`DROP TABLE IF EXISTS ${t}`);
   } finally {
     dbDrop.release();

@@ -22,6 +22,7 @@ function mapOcor(r) {
     id: r.id, titulo: r.titulo, escolaId: r.escola_id, descricao: r.descricao,
     tecnicoId: r.tecnico_id, eventoId: r.evento_id, prioridade: r.prioridade,
     gravidade: r.gravidade, estado: r.estado, resolucao: r.resolucao,
+    comentario: r.comentario || '', comentarioTecnicoId: r.comentario_tecnico_id,
     criadoEm: r.criado_em, atualizadoEm: r.atualizado_em,
   };
 }
@@ -117,9 +118,10 @@ router.post('/', async (req, res, next) => {
     if (!b.titulo || !b.descricao) return res.status(400).json({ error: 'titulo e descricao são obrigatórios' });
     const pool = getPool();
     const [info] = await pool.query(
-      'INSERT INTO ocorrencias (titulo, escola_id, descricao, tecnico_id, evento_id, prioridade, gravidade, estado, resolucao, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO ocorrencias (titulo, escola_id, descricao, tecnico_id, evento_id, prioridade, gravidade, estado, resolucao, comentario, comentario_tecnico_id, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
       [b.titulo, b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
-       b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'', now, now]
+       b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'',
+       b.comentario||'', b.comentarioTecnicoId||null, now, now]
     );
     const ocorId = info.insertId;
     if (b.fotos && b.fotos.length) {
@@ -132,7 +134,8 @@ router.post('/', async (req, res, next) => {
     }
     res.json({ id: ocorId, titulo: b.titulo, escolaId: b.escolaId, descricao: b.descricao,
       tecnicoId: b.tecnicoId, eventoId: b.eventoId, prioridade: b.prioridade, gravidade: b.gravidade,
-      estado: b.estado, resolucao: b.resolucao, criadoEm: now, atualizadoEm: now });
+      estado: b.estado, resolucao: b.resolucao, comentario: b.comentario, comentarioTecnicoId: b.comentarioTecnicoId,
+      criadoEm: now, atualizadoEm: now });
   } catch (err) { console.error('Erro ao criar ocorrência:', err); next(err); }
 });
 
@@ -142,9 +145,10 @@ router.put('/:id', async (req, res, next) => {
     const now = new Date().toISOString().slice(0,10);
     const pool = getPool();
     await pool.query(
-      'UPDATE ocorrencias SET titulo=?, escola_id=?, descricao=?, tecnico_id=?, evento_id=?, prioridade=?, gravidade=?, estado=?, resolucao=?, atualizado_em=? WHERE id=?',
+      'UPDATE ocorrencias SET titulo=?, escola_id=?, descricao=?, tecnico_id=?, evento_id=?, prioridade=?, gravidade=?, estado=?, resolucao=?, comentario=?, comentario_tecnico_id=?, atualizado_em=? WHERE id=?',
       [b.titulo, b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
-       b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'', now, req.params.id]
+       b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'',
+       b.comentario||'', b.comentarioTecnicoId||null, now, req.params.id]
     );
     if (b.deleteFotos && b.deleteFotos.length) {
       for (const fid of b.deleteFotos) {
