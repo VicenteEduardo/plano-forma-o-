@@ -2627,6 +2627,7 @@ function checkTechConflict(techId, dateISO, hi, hf, excludeEventType, excludeEve
   const newStart = timeToMin(hi), newEnd = timeToMin(hf);
   const conflicts = [];
   if(newEnd <= newStart) return conflicts;
+  if(dateISO < iso(new Date())) return conflicts;
   EVENTOS.forEach(e=>{
     if(isTechAssignedToEvent(tid, e) && e.data===dateISO && e.estado!=='Cancelado'){
       if(excludeEventType==='evento' && excludeEventId && e.id===excludeEventId) return;
@@ -5275,16 +5276,19 @@ document.getElementById('acesSaveBtn').addEventListener('click', async ()=>{
     if(!password){ showToast('Indica a password.','warning'); return; }
     if(!tipoAcesso){ showToast('Preenche o tipo de acesso (label).','warning'); return; }
     const payload = { escolaId: Number(escolaIdVal), username, password, tipoAcesso, observacoes };
-    if(editingAcessoId){
-      await apiPut('/acessos/'+editingAcessoId, payload);
-    } else {
-      await apiPost('/acessos', payload);
-    }
     const foiEdicao = !!editingAcessoId;
+    if(foiEdicao){
+      await apiPut('/acessos/'+editingAcessoId, payload);
+      const a = ACESSOS.find(x=>String(x.id)===String(editingAcessoId));
+      if(a) Object.assign(a, payload);
+    } else {
+      const resp = await apiPost('/acessos', payload);
+      ACESSOS.push({ id: resp.id, ...payload });
+    }
     acessoModal.hide();
-    await loadAllData();
     renderAcessos();
     showToast(foiEdicao ? 'Acesso atualizado com sucesso.' : 'Acesso guardado com sucesso.', 'success');
+    loadAllData().catch(()=>{});
   }catch(e){ console.error('Erro ao guardar acesso:', e); showToast('Erro ao guardar acesso: '+e.message,'error'); }
 });
 document.getElementById('acesDeleteBtn').addEventListener('click', async ()=>{
