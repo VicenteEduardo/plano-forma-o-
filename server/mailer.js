@@ -48,7 +48,7 @@ async function sendMail(opts) {
 function notifyOcorrencia(info) {
   const to = [...new Set((info.to || []).concat(notifyEmails).filter(Boolean))];
   if (!to.length) return;
-  const appUrl = process.env.APP_URL || process.env.APP_CLIENT_URL || '';
+  const appUrl = process.env.APP_URL || process.env.APP_CLIENT_URL || 'https://reuniao.eduall.io/';
   const linhas = [];
   const add = (label, val) => { if (val) linhas.push(`<tr><td style="padding:4px 10px 4px 0;font-weight:600;white-space:nowrap;color:#334155;">${label}</td><td style="padding:4px 10px;color:#0f172a;">${val}</td></tr>`); };
   add('Ação', escHtml(info.acao));
