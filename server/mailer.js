@@ -57,12 +57,20 @@ async function sendMail(opts) {
   }
 }
 
+const MAIL_LOGO = 'https://ik.imagekit.io/zks5iegia/image-gen__56___1_-removebg-preview.png?updatedAt=1772698800311';
+
 function notifyOcorrencia(info) {
   const to = [...new Set((info.to || []).concat(notifyEmails).filter(Boolean))];
   if (!to.length) return;
   const appUrl = process.env.APP_URL || process.env.APP_CLIENT_URL || 'https://reuniao.eduall.io/';
-  const linhas = [];
-  const add = (label, val) => { if (val) linhas.push(`<tr><td style="padding:4px 10px 4px 0;font-weight:600;white-space:nowrap;color:#334155;">${label}</td><td style="padding:4px 10px;color:#0f172a;">${val}</td></tr>`); };
+  const year = new Date().getFullYear();
+
+  const detalhes = [];
+  const add = (label, val) => { if (val) detalhes.push(`
+      <div style="margin-bottom:15px;">
+        <div style="color:#7c3aed;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">${label}</div>
+        <div style="color:#1f2937;font-size:14px;font-weight:500;">${val}</div>
+      </div>`); };
   add('Ação', escHtml(info.acao));
   add('Título', escHtml(info.titulo));
   add('Estado', escHtml(info.estado));
@@ -73,12 +81,51 @@ function notifyOcorrencia(info) {
   if (info.comentario) add('Comentário', escHtml(info.comentario));
 
   const html = `
-    <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">
-      <div style="background:#0f172a;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-size:15px;font-weight:700;">Eduall Software — ${escHtml(info.acao)}</div>
-      <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:16px 20px;">
-        <table style="border-collapse:collapse;font-size:13px;">${linhas.join('')}</table>
-        ${info.descricao ? `<p style="font-size:13px;color:#334155;border-left:3px solid #94a3b8;padding-left:10px;margin-top:12px;">${escHtml(info.descricao)}</p>` : ''}
-        ${appUrl ? `<p style="margin-top:16px;"><a href="${escHtml(appUrl)}" style="background:#2563eb;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:13px;">Abrir sistema</a></p>` : ''}
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%);padding:40px 20px;min-height:100vh;width:100%;">
+      <div style="max-width:600px;margin:0 auto;position:relative;">
+        <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;position:relative;">
+          <div style="background:#1f2937;padding:30px 20px;text-align:center;">
+            <img src="${MAIL_LOGO}" alt="Eduall" style="height:60px;width:auto;display:inline-block;">
+          </div>
+          <div style="padding:40px 30px;text-align:center;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 15px;">
+              <path d="M7 18C6.45 18 6 18.45 6 19C6 19.55 6.45 20 7 20H17C17.55 20 18 19.55 18 19C18 18.45 17.55 18 17 18H7ZM3 6V14H3.58C3.2 14.78 3 15.66 3 16.5C3 18.45 4.21 20.12 5.88 20.88C6.55 20.96 7.25 21 8 21H16C16.75 21 17.45 20.96 18.12 20.88C19.79 20.12 21 18.45 21 16.5C21 15.66 20.8 14.78 20.42 14H21V6C21 4.9 20.1 4 19 4H5C3.9 4 3 4.9 3 6ZM5 6H19V12H5V6Z" fill="#7c3aed"/>
+            </svg>
+            <div style="color:#1f2937;font-size:28px;font-weight:700;margin-bottom:8px;line-height:1.2;">${escHtml(info.acao)}</div>
+            <div style="color:#7c3aed;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:20px;">Ocorrências · Sistema Eduall</div>
+            <p style="color:#4b5563;font-size:15px;line-height:1.8;margin-bottom:12px;">Olá,<br>Foi registada uma ocorrência na plataforma. Aceda ao portal para visualizar os detalhes e acompanhar a resolução.</p>
+            <div style="text-align:left;background:#f9fafb;border-radius:8px;margin:25px 0;overflow:hidden;">
+              <div style="background:#1f2937;color:#ffffff;padding:12px 20px;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Detalhes da Ocorrência</div>
+              <div style="padding:20px;">${detalhes.join('')}${info.descricao ? `
+                <div>
+                  <div style="color:#7c3aed;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Descrição</div>
+                  <div style="color:#1f2937;font-size:14px;font-weight:500;overflow-wrap:anywhere;">${escHtml(info.descricao)}</div>
+                </div>` : ''}</div>
+            </div>
+            <p style="color:#4b5563;font-size:15px;line-height:1.8;margin-bottom:12px;">Aceda ao portal para adicionar comentários, anexar fotos ou atualizar o estado da ocorrência.</p>
+            <div style="text-align:center;margin:30px 0;">
+              <a href="${escHtml(appUrl)}" style="display:inline-block;background:linear-gradient(135deg,#ec4899 0%,#db2777 100%);color:#ffffff;padding:14px 50px;border-radius:25px;text-decoration:none;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 8px 20px rgba(236,72,153,.3);">Visualizar Ocorrência</a>
+            </div>
+            <div style="color:#9ca3af;font-size:12px;margin-top:20px;line-height:1.6;word-break:break-all;">Para acompanhar a ocorrência, aceda ao link abaixo:<br><strong style="color:#7c3aed;">${escHtml(appUrl)}</strong></div>
+          </div>
+          <div style="background:linear-gradient(180deg,#7c3aed 0%,#6d28d9 100%);padding:30px;text-align:center;color:#ffffff;">
+            <div style="font-weight:700;font-size:16px;margin-bottom:5px;letter-spacing:1px;">EDUALL</div>
+            <div style="color:rgba(255,255,255,.8);font-size:13px;margin-bottom:20px;">Plataforma de Gestão Escolar Integrada</div>
+            <div style="margin:20px 0;display:flex;justify-content:center;gap:12px;">
+              <a href="#" style="width:36px;height:36px;background:#1f2937;border-radius:50%;display:inline-block;line-height:36px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;">f</a>
+              <a href="#" style="width:36px;height:36px;background:#1f2937;border-radius:50%;display:inline-block;line-height:36px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;">𝕏</a>
+              <a href="#" style="width:36px;height:36px;background:#1f2937;border-radius:50%;display:inline-block;line-height:36px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;">in</a>
+              <a href="#" style="width:36px;height:36px;background:#1f2937;border-radius:50%;display:inline-block;line-height:36px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;">Li</a>
+            </div>
+            <div style="border-top:1px solid rgba(255,255,255,.2);margin:20px 0;"></div>
+            <div style="margin:15px 0;font-size:12px;">
+              <a href="#" style="color:rgba(255,255,255,.9);text-decoration:none;margin:0 10px;">Privacidade</a>
+              <a href="#" style="color:rgba(255,255,255,.9);text-decoration:none;margin:0 10px;">Termos</a>
+              <a href="#" style="color:rgba(255,255,255,.9);text-decoration:none;margin:0 10px;">Suporte</a>
+            </div>
+            <div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:15px;line-height:1.5;">© ${year} Eduall Software. Todos os direitos reservados.<br>Esta mensagem foi enviada para <strong>${escHtml(to.join(', '))}</strong></div>
+          </div>
+        </div>
       </div>
     </div>`;
   const text = [
