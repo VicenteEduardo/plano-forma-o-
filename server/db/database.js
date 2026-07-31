@@ -196,14 +196,27 @@ async function initSchema() {
       gravidade VARCHAR(20) NOT NULL DEFAULT 'Moderada',
       estado VARCHAR(30) NOT NULL DEFAULT 'Aberta',
       resolucao TEXT,
-      comentario TEXT,
-      comentario_tecnico_id INT,
       criado_em VARCHAR(10) NOT NULL,
       atualizado_em VARCHAR(10) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
-    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN comentario TEXT'); } catch (_) {}
-    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN comentario_tecnico_id INT DEFAULT NULL'); } catch (_) {}
+    await db.execute(`CREATE TABLE IF NOT EXISTS ocorrencia_comentarios (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      ocorrencia_id INT NOT NULL,
+      comentario TEXT NOT NULL,
+      tecnico_id INT,
+      criado_em VARCHAR(19) NOT NULL,
+      INDEX idx_occom_ocorrencia (ocorrencia_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    try {
+      await db.execute(`INSERT INTO ocorrencia_comentarios (ocorrencia_id, comentario, tecnico_id, criado_em)
+        SELECT id, comentario, comentario_tecnico_id, criado_em FROM ocorrencias
+        WHERE comentario IS NOT NULL AND TRIM(comentario) != ''
+          AND NOT EXISTS (SELECT 1 FROM ocorrencia_comentarios c WHERE c.ocorrencia_id = ocorrencias.id)`);
+    } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias DROP COLUMN comentario'); } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias DROP COLUMN comentario_tecnico_id'); } catch (_) {}
 
     await db.execute(`CREATE TABLE IF NOT EXISTS ocorrencia_fotos (
       id INT AUTO_INCREMENT PRIMARY KEY,

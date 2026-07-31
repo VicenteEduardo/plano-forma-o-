@@ -3,3 +3,4 @@ data/
 *.sql
 index (2).html
 server/db/seed.js
+.env

@@ -1419,14 +1419,6 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
               <label class="form-label">Nota de resolução <span class="text-muted fw-normal">(preencher quando resolvido)</span></label>
               <textarea class="form-control" id="ocorResolucao" rows="2" placeholder="O que foi feito para resolver o problema..."></textarea>
             </div>
-            <div class="col-md-8">
-              <label class="form-label">Comentário do incidente <span class="text-muted fw-normal">(opcional)</span></label>
-              <textarea class="form-control" id="ocorComentario" rows="3" placeholder="Comentário adicional sobre o incidente..."></textarea>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Comentado por <span class="text-muted fw-normal">(técnico)</span></label>
-              <select class="form-select" id="ocorComentarioTecnico"><option value="">Não atribuído</option></select>
-            </div>
           </div>
         </form>
       </div>
@@ -1443,10 +1435,14 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold"><i class="bi bi-images me-1"></i>Fotos e Vídeos da Ocorrência</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-octagon me-1 text-danger"></i>Detalhes da Ocorrência</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="ocorViewerBody" style="max-height:80vh;overflow-y:auto;"></div>
+      <div class="modal-body" id="ocorViewerBody" style="max-height:78vh;overflow-y:auto;"></div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-soft me-auto" id="ocorViewerEditBtn"><i class="bi bi-arrow-repeat me-1"></i>Atualizar ocorrência</button>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Fechar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2583,6 +2579,13 @@ function minToTime(m){ const h=Math.floor(m/60), mi=m%60; return String(h).padSt
 function fmtDatePt(dstr){
   const d = new Date(dstr+'T00:00:00');
   return d.toLocaleDateString('pt-PT', {day:'2-digit', month:'short', year:'numeric'});
+}
+function fmtDateTimePt(dstr){
+  if(!dstr) return '';
+  const m = String(dstr).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if(!m) return fmtDatePt(dstr);
+  const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]));
+  return d.toLocaleDateString('pt-PT',{day:'2-digit', month:'short'}) + ' ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit', minute:'2-digit'});
 }
 function fmtNum(n){
   return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:0,maximumFractionDigits:2});
@@ -3884,8 +3887,6 @@ function ocorEstadoChip(e){
 function populateOcorSelects(){
   const selTec = document.getElementById('ocorTecnico');
   selTec.innerHTML = '<option value="">Não atribuído</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
-  const selCom = document.getElementById('ocorComentarioTecnico');
-  selCom.innerHTML = '<option value="">Não atribuído</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   const selEvt = document.getElementById('ocorEvento');
   const eventosOrdenados = [...EVENTOS].sort((a,b)=> b.data.localeCompare(a.data));
   selEvt.innerHTML = '<option value="">Nenhum</option>' + eventosOrdenados.map(e=>`<option value="${e.id}">${fmtDatePt(e.data)} · ${e.titulo}</option>`).join('');
@@ -3913,8 +3914,6 @@ function openOcorrenciaModal(id){
       document.getElementById('ocorGravidade').value = o.gravidade;
       document.getElementById('ocorEstado').value = o.estado;
       document.getElementById('ocorResolucao').value = o.resolucao||'';
-      document.getElementById('ocorComentario').value = o.comentario||'';
-      document.getElementById('ocorComentarioTecnico').value = o.comentarioTecnicoId||'';
       loadOcorMedia(id).then(()=>{ renderOcorGallery(); renderOcorVideoPreview(); });
       document.getElementById('ocorDeleteBtn').classList.remove('d-none');
       document.getElementById('ocorSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar ocorrência';
@@ -3956,8 +3955,6 @@ function resetOcorForm(){
   document.getElementById('ocorPrioridade').value = 'Média';
   document.getElementById('ocorGravidade').value = 'Moderada';
   document.getElementById('ocorEstado').value = 'Aberta';
-  document.getElementById('ocorComentario').value = '';
-  document.getElementById('ocorComentarioTecnico').value = '';
   document.getElementById('ocorFotoInput').value = '';
   document.getElementById('ocorVideoInput').value = '';
   document.getElementById('ocorModalTitle').innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i>Nova ocorrência';
@@ -4063,8 +4060,6 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
       gravidade: document.getElementById('ocorGravidade').value,
       estado: document.getElementById('ocorEstado').value,
       resolucao: document.getElementById('ocorResolucao').value.trim(),
-      comentario: document.getElementById('ocorComentario').value.trim(),
-      comentarioTecnicoId: document.getElementById('ocorComentarioTecnico').value ? Number(document.getElementById('ocorComentarioTecnico').value) : null,
       fotos: [...pendingOcorFotos],
       video: pendingOcorVideo,
     };
@@ -4132,7 +4127,6 @@ function renderOcorrencias(){
   }
   cont.innerHTML = list.map(o=>{
     const t = techById(o.tecnicoId);
-    const comT = o.comentarioTecnicoId ? techById(o.comentarioTecnicoId) : null;
     const evt = o.eventoId ? EVENTOS.find(e=>e.id===o.eventoId) : null;
     let media = '';
     if(o.fotosCount > 0){
@@ -4155,6 +4149,7 @@ function renderOcorrencias(){
             ${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}
             ${o.hasVideo? `<span class="chip chip-info"><i class="bi bi-camera-video"></i>Vídeo anexado</span>`:''}
             ${o.fotosCount > 0? `<span class="chip chip-info"><i class="bi bi-images"></i>${o.fotosCount} foto${o.fotosCount!==1?'s':''}</span>`:''}
+            ${o.comentariosCount > 0? `<span class="chip chip-info" style="cursor:pointer;" onclick="openOcorViewer(${o.id})"><i class="bi bi-chat-left-text me-1"></i>${o.comentariosCount} comentário${o.comentariosCount!==1?'s':''}</span>`:''}
           </div>
           <div style="font-size:11.5px; color:var(--ink-500);">
             ${o.escolaId? (()=>{
@@ -4165,10 +4160,9 @@ function renderOcorrencias(){
             ${evt? ` · <i class="bi bi-calendar-event me-1"></i>${evt.titulo}` : ''}
           </div>
           ${o.estado==='Resolvida' && o.resolucao? `<div class="mt-2" style="font-size:12px; background:var(--ok-bg); color:var(--ok); border-radius:8px; padding:6px 10px;"><i class="bi bi-check-circle-fill me-1"></i>${o.resolucao}</div>` : ''}
-          ${o.comentario? `<div class="mt-2" style="font-size:12px; background:#EEF0F7; color:var(--ink-700); border-radius:8px; padding:6px 10px;"><i class="bi bi-chat-left-text me-1"></i>${o.comentario}${comT? `<span class="text-muted fw-normal" style="white-space:nowrap;"> — ${comT.nome}</span>`:''}</div>` : ''}
         </div>
         <div class="d-flex flex-column gap-1 flex-shrink-0">
-          ${(o.fotosCount > 0 || o.hasVideo) ? `<button class="btn btn-sm btn-light border" onclick="openOcorViewer(${o.id})"><i class="bi bi-eye me-1"></i>Ver</button>` : ''}
+          <button class="btn btn-sm btn-light border" onclick="openOcorViewer(${o.id})"><i class="bi bi-eye me-1"></i>Ver</button>
           <button class="btn btn-sm btn-soft" onclick="openOcorrenciaModal(${o.id})"><i class="bi bi-arrow-repeat me-1"></i>Atualizar</button>
         </div>
       </div>
@@ -4176,38 +4170,127 @@ function renderOcorrencias(){
   }).join('');
 }
 
-function openOcorViewer(ocorId){
-  const modal = document.getElementById('ocorViewerModal');
+let viewerOcorId = null;
+const ocorViewerModal = new bootstrap.Modal(document.getElementById('ocorViewerModal'));
+
+async function openOcorViewer(ocorId){
+  const o = OCORRENCIAS.find(x=>x.id===ocorId);
+  viewerOcorId = ocorId;
   const body = document.getElementById('ocorViewerBody');
-  body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">A carregar media...</div></div>';
-  const bsModal = new bootstrap.Modal(modal);
-  bsModal.show();
-  loadOcorMedia(ocorId).then(()=>{
-    const fotos = ocorMediaCache[ocorId]?.fotos || [];
-    const video = ocorMediaCache[ocorId]?.video || null;
-    if(!fotos.length && !video){
-      body.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-card-text" style="font-size:32px;"></i><div class="mt-2">Sem fotos ou vídeos anexados</div></div>';
-      return;
-    }
-    let html = '';
+  body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">A carregar...</div></div>';
+  ocorViewerModal.show();
+  const [media, comentarios] = await Promise.all([
+    apiGet('/ocorrencias/'+ocorId+'/media').catch(()=>({fotos:[],video:null})),
+    apiGet('/ocorrencias/'+ocorId+'/comentarios').catch(()=>[])
+  ]);
+  if(!o){
+    body.innerHTML = '<div class="text-center py-4 text-muted">Ocorrência não encontrada</div>';
+    return;
+  }
+  const t = techById(o.tecnicoId);
+  const evt = o.eventoId ? EVENTOS.find(e=>e.id===o.eventoId) : null;
+  const fotos = media.fotos || [];
+  const video = media.video || null;
+  let html = '';
+  html += `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+    <div class="fw-bold" style="font-size:16px;">${o.titulo}</div>
+    <div style="font-size:11px; color:var(--ink-500);">Criada em ${fmtDatePt(o.criadoEm)} · Atualizada em ${fmtDatePt(o.atualizadoEm)}</div>
+  </div>`;
+  html += `<div class="d-flex align-items-center flex-wrap gap-2 mb-2">${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}</div>`;
+  html += `<div style="font-size:12.5px; color:var(--ink-700); overflow-wrap:anywhere; margin-bottom:10px;">${o.descricao}</div>`;
+  let escolaHtml = '';
+  if(o.escolaId){
+    const oEsc = escolaById(o.escolaId);
+    if(oEsc) escolaHtml = `<img src="${escolaLogo(oEsc)}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;border:1px solid var(--line);vertical-align:middle;" onerror="escolaImgOnError(this,escolaById(${oEsc.id}))"> <span>${oEsc.nome}</span>`;
+  }
+  html += `<div style="font-size:12px; color:var(--ink-500); margin-bottom:10px;">
+    ${escolaHtml}
+    ${t? ` · <i class="bi bi-person me-1"></i>${t.nome}` : ' · <span class="text-muted">sem técnico atribuído</span>'}
+    ${evt? ` · <i class="bi bi-calendar-event me-1"></i>${evt.titulo}` : ''}
+  </div>`;
+  if(o.estado==='Resolvida' && o.resolucao){
+    html += `<div style="font-size:12px; background:var(--ok-bg); color:var(--ok); border-radius:8px; padding:6px 10px; margin-bottom:10px;"><i class="bi bi-check-circle-fill me-1"></i>${o.resolucao}</div>`;
+  }
+  if(fotos.length || video){
+    html += '<div style="font-size:13px; font-weight:600; margin-bottom:8px;"><i class="bi bi-images me-1"></i>Fotos e Vídeo</div>';
     if(fotos.length){
-      html += '<div class="d-flex flex-wrap gap-2 mb-3">';
-      fotos.forEach((src,i)=>{
-        html += `<div style="position:relative;flex:0 0 auto;">
-          <img src="${src}" style="max-width:100%;max-height:70vh;border-radius:8px;cursor:pointer;" onclick="window.open('${src}','_blank')">
-          <a href="${src}" download class="btn btn-sm btn-light border" style="position:absolute;bottom:6px;right:6px;"><i class="bi bi-download"></i></a>
-        </div>`;
-      });
-      html += '</div>';
+      html += '<div class="d-flex flex-wrap gap-2 mb-2">' + fotos.map(src=>`<div style="position:relative;flex:0 0 auto;"><img src="${src}" style="max-height:220px;border-radius:8px;border:1px solid var(--line);cursor:pointer;" onclick="window.open('${src}','_blank')"></div>`).join('') + '</div>';
     }
     if(video){
-      html += `<div class="mt-2"><video src="${video}" controls style="max-width:100%;max-height:60vh;border-radius:8px;"></video></div>`;
+      html += `<div><video src="${video}" controls style="max-width:100%;max-height:50vh;border-radius:8px;"></video></div>`;
     }
-    body.innerHTML = html;
-  }).catch(e=>{
-    body.innerHTML = `<div class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle" style="font-size:32px;"></i><div class="mt-2">Erro ao carregar: ${e.message}</div></div>`;
-  });
+  }
+  html += '<hr style="opacity:.15; margin:14px 0;">';
+  html += '<div id="ocorViewerComentarios"></div>';
+  body.innerHTML = html;
+  renderOcorViewerComentarios(ocorId, comentarios);
 }
+
+function renderOcorViewerComentarios(ocorId, comentarios){
+  const wrap = document.getElementById('ocorViewerComentarios');
+  let html = `<div style="font-size:13px; font-weight:600; margin-bottom:8px;"><i class="bi bi-chat-left-text me-1"></i>Comentários (${(comentarios||[]).length})</div>`;
+  if(!(comentarios||[]).length){
+    html += '<div class="text-muted" style="font-size:12px; margin-bottom:10px;">Sem comentários ainda. Adiciona o primeiro abaixo.</div>';
+  } else {
+    html += comentarios.map(c=>{
+      const ct = c.tecnicoId ? techById(c.tecnicoId) : null;
+      return `<div class="d-flex justify-content-between align-items-start gap-2" style="background:#EEF0F7; border-radius:8px; padding:6px 10px; margin-bottom:6px;">
+        <div style="font-size:12px; color:var(--ink-700); overflow-wrap:anywhere;">${c.comentario}
+          <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">${ct? `<i class="bi bi-person me-1"></i>${ct.nome}` : '<i class="bi bi-person me-1"></i>Anónimo'} · ${fmtDateTimePt(c.criadoEm)}</div>
+        </div>
+        <button class="btn btn-sm btn-light border flex-shrink-0" style="padding:1px 6px; font-size:11px;" onclick="deleteOcorComentario(${ocorId}, ${c.id})"><i class="bi bi-trash"></i></button>
+      </div>`;
+    }).join('');
+  }
+  const tecOptions = '<option value="">— Técnico —</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  html += `<div style="margin-top:10px; border-top:1px dashed var(--line); padding-top:10px;">
+    <div class="row g-2">
+      <div class="col-12">
+        <textarea id="ocorViewerComentarioTexto" class="form-control form-control-sm" rows="2" placeholder="Adicionar comentário..."></textarea>
+      </div>
+      <div class="col-7">
+        <select id="ocorViewerComentarioTecnico" class="form-select form-select-sm">${tecOptions}</select>
+      </div>
+      <div class="col-5">
+        <button class="btn btn-sm btn-brand w-100" onclick="addOcorComentario(${ocorId})"><i class="bi bi-plus-lg me-1"></i>Comentar</button>
+      </div>
+    </div>
+  </div>`;
+  wrap.innerHTML = html;
+}
+
+async function addOcorComentario(ocorId){
+  const textoEl = document.getElementById('ocorViewerComentarioTexto');
+  const texto = textoEl.value.trim();
+  if(!texto){ showToast('Escreve o comentário antes de adicionar.', 'warning'); return; }
+  try{
+    const tecnicoEl = document.getElementById('ocorViewerComentarioTecnico');
+    await apiPost('/ocorrencias/'+ocorId+'/comentarios', { comentario: texto, tecnicoId: tecnicoEl && tecnicoEl.value ? Number(tecnicoEl.value) : null });
+    const comentarios = await apiGet('/ocorrencias/'+ocorId+'/comentarios');
+    renderOcorViewerComentarios(ocorId, comentarios);
+    const o = OCORRENCIAS.find(x=>x.id===ocorId);
+    if(o) o.comentariosCount = comentarios.length;
+    showToast('Comentário adicionado.', 'success');
+  }catch(e){ console.error('Erro ao adicionar comentário:', e); showToast('Erro ao adicionar comentário: '+e.message,'error'); }
+}
+
+async function deleteOcorComentario(ocorId, comentarioId){
+  try{
+    if(!confirm('Remover este comentário?')) return;
+    await apiDelete('/ocorrencias/'+ocorId+'/comentarios/'+comentarioId);
+    const comentarios = await apiGet('/ocorrencias/'+ocorId+'/comentarios');
+    renderOcorViewerComentarios(ocorId, comentarios);
+    const o = OCORRENCIAS.find(x=>x.id===ocorId);
+    if(o) o.comentariosCount = comentarios.length;
+    showToast('Comentário removido.', 'success');
+  }catch(e){ console.error('Erro ao remover comentário:', e); showToast('Erro ao remover comentário: '+e.message,'error'); }
+}
+
+document.getElementById('ocorViewerEditBtn').addEventListener('click', ()=>{
+  if(!viewerOcorId) return;
+  ocorViewerModal.hide();
+  openOcorrenciaModal(viewerOcorId);
+});
 
 /* =========================================================================
    PLANO DE FORMAÇÃO (linhas dinâmicas + exportação PDF)
