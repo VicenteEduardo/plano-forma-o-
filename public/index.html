@@ -4068,13 +4068,22 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
     if(isEdit){
       await apiPut('/ocorrencias/'+editingOcorId, payload);
       delete ocorMediaCache[editingOcorId];
+      const o = OCORRENCIAS.find(x=>x.id===editingOcorId);
+      if(o){
+        Object.assign(o, { titulo: payload.titulo, escolaId: payload.escolaId, descricao: payload.descricao, tecnicoId: payload.tecnicoId, eventoId: payload.eventoId, prioridade: payload.prioridade, gravidade: payload.gravidade, estado: payload.estado, resolucao: payload.resolucao });
+        if(payload.fotos && payload.fotos.length) o.fotosCount = (o.fotosCount||0) + payload.fotos.length;
+        if(payload.video) o.hasVideo = true;
+      }
     } else {
-      await apiPost('/ocorrencias', payload);
+      const nova = await apiPost('/ocorrencias', payload);
+      nova.fotosCount = (payload.fotos||[]).length;
+      nova.hasVideo = !!payload.video;
+      OCORRENCIAS.unshift(nova);
     }
     ocorrenciaModal.hide();
-    await loadAllData();
     renderOcorrencias();
     showToast(isEdit ? 'Ocorrência atualizada com sucesso.' : 'Ocorrência criada com sucesso.', 'success');
+    loadAllData().catch(()=>{});
   }catch(e){ console.error('Erro ao guardar ocorrência:', e); showToast('Erro ao guardar ocorrência: '+e.message,'error'); }
   finally{ btn.disabled = false; btn.innerHTML = isEdit ? 'Atualizar ocorrência' : 'Guardar ocorrência'; }
 });
