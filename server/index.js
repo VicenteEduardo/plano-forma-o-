@@ -22,7 +22,16 @@ app.post('/api/test-email', async (req, res, next) => {
       text: 'Isto é um email de teste. As notificações de ocorrências estão a funcionar.',
       html: '<p>Isto é um <b>email de teste</b>. As notificações de ocorrências estão a funcionar.</p>',
     });
-    res.json({ ...result, to });
+    res.json({
+      ...result,
+      to,
+      config: {
+        hasMailHost: !!process.env.MAIL_HOST,
+        hasMailUser: !!process.env.MAIL_USER,
+        hasMailPass: !!process.env.MAIL_PASSWORD,
+        notifyEmails: notifyEmails.length,
+      },
+    });
   } catch (err) { next(err); }
 });
 
