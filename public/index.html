@@ -718,6 +718,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                   </select>
                   <button class="btn btn-danger btn-sm" onclick="openOcorrenciaModal()"><i class="bi bi-plus-lg me-1"></i>Nova ocorrência</button>
                   <button class="btn btn-outline-danger btn-sm" onclick="pdfOcorrencias()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+                  <button class="btn btn-outline-secondary btn-sm" onclick="testarEmailNotificacoes()" title="Envia um email de teste para os destinatários das notificações"><i class="bi bi-envelope-check me-1"></i>Testar email</button>
                 </div>
               </div>
               <div id="listaOcorrencias"></div>
@@ -4284,6 +4285,17 @@ async function deleteOcorComentario(ocorId, comentarioId){
     if(o) o.comentariosCount = comentarios.length;
     showToast('Comentário removido.', 'success');
   }catch(e){ console.error('Erro ao remover comentário:', e); showToast('Erro ao remover comentário: '+e.message,'error'); }
+}
+
+async function testarEmailNotificacoes(){
+  const btn = document.querySelector('button[onclick="testarEmailNotificacoes()"]');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A enviar...'; }
+  try{
+    const r = await apiPost('/test-email', {});
+    if(r.ok) showToast('Email de teste enviado com sucesso.', 'success');
+    else showToast('Falha no envio de email: '+(r.error||'ver logs do servidor'), 'error');
+  }catch(e){ console.error('Erro ao testar email:', e); showToast('Erro ao testar email: '+e.message,'error'); }
+  finally{ if(btn){ btn.disabled = false; btn.innerHTML = '<i class="bi bi-envelope-check me-1"></i>Testar email'; } }
 }
 
 document.getElementById('ocorViewerEditBtn').addEventListener('click', ()=>{

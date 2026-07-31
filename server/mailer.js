@@ -1,7 +1,12 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const nodemailer = require('nodemailer');
 
 const notifyEmails = (process.env.NOTIFY_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+
+if (!process.env.MAIL_HOST || !process.env.MAIL_USER || !process.env.MAIL_PASSWORD) {
+  console.warn('[mail] AVISO: falta configuração de email no .env (MAIL_HOST/MAIL_USER/MAIL_PASSWORD). As notificações por email não serão enviadas.');
+}
 
 function createTransporter() {
   return nodemailer.createTransport({
@@ -23,12 +28,12 @@ function escHtml(s) {
 
 async function sendMail(opts) {
   const to = [].concat(opts.to || []).filter(Boolean);
-  if (!to.length) return false;
+  if (!to.length) return { ok: false, error: 'Sem destinatários' };
   const from = opts.from || process.env.MAIL_FROM || '"Eduall Software" <noreply@eduall.site>';
   try {
     await transporter.sendMail({ from, to: to.join(', '), subject: opts.subject, text: opts.text, html: opts.html });
     console.log('[mail] enviado para', to.join(', '));
-    return true;
+    return { ok: true, via: 'SMTP principal' };
   } catch (err) {
     console.error('[mail] erro ao enviar (SMTP principal):', err.message);
     if (process.env.GMAIL_USER && process.env.GMAIL_PASSWORD) {
@@ -36,12 +41,13 @@ async function sendMail(opts) {
         const gmail = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASSWORD } });
         await gmail.sendMail({ from: process.env.GMAIL_USER, to: to.join(', '), subject: opts.subject, text: opts.text, html: opts.html });
         console.log('[mail] enviado via Gmail fallback para', to.join(', '));
-        return true;
+        return { ok: true, via: 'Gmail fallback' };
       } catch (err2) {
         console.error('[mail] erro ao enviar (fallback Gmail):', err2.message);
+        return { ok: false, error: `SMTP: ${err.message}; Gmail fallback: ${err2.message}`, via: 'nenhum' };
       }
     }
-    return false;
+    return { ok: false, error: err.message, via: 'nenhum' };
   }
 }
 
@@ -84,4 +90,4 @@ function notifyOcorrencia(info) {
   sendMail({ to, subject: `${info.acao} — ${info.titulo}`, html, text });
 }
 
-module.exports = { sendMail, notifyOcorrencia, escHtml };
+module.exports = { sendMail, notifyOcorrencia, notifyEmails, escHtml };

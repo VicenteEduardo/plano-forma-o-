@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initSchema } = require('./db/database');
+const { sendMail, notifyEmails } = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +11,20 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Diagnostic: test email notifications
+app.post('/api/test-email', async (req, res, next) => {
+  try {
+    const to = [].concat(req.body.to || notifyEmails).filter(Boolean);
+    const result = await sendMail({
+      to,
+      subject: 'Teste de email — Eduall Software',
+      text: 'Isto é um email de teste. As notificações de ocorrências estão a funcionar.',
+      html: '<p>Isto é um <b>email de teste</b>. As notificações de ocorrências estão a funcionar.</p>',
+    });
+    res.json({ ...result, to });
+  } catch (err) { next(err); }
+});
 
 // Proxy: fetch external school logos to avoid CORS
 app.get('/api/escola-logo', async (req, res, next) => {
