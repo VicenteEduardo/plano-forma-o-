@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initSchema } = require('./db/database');
-const { sendMail, notifyEmails } = require('./mailer');
+const { sendMail, notifyEmails, mailConfig } = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,9 +26,10 @@ app.post('/api/test-email', async (req, res, next) => {
       ...result,
       to,
       config: {
-        hasMailHost: !!process.env.MAIL_HOST,
-        hasMailUser: !!process.env.MAIL_USER,
-        hasMailPass: !!process.env.MAIL_PASSWORD,
+        usingEnv: !!process.env.MAIL_HOST,
+        host: mailConfig.host,
+        hasUser: !!mailConfig.user,
+        hasPass: !!mailConfig.pass,
         notifyEmails: notifyEmails.length,
       },
     });

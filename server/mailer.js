@@ -2,20 +2,26 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const nodemailer = require('nodemailer');
 
-const notifyEmails = (process.env.NOTIFY_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+const mailConfig = {
+  host: process.env.MAIL_HOST || 'smtp.etic.co.ao',
+  port: Number(process.env.MAIL_PORT || 587),
+  secure: process.env.MAIL_SECURE ? process.env.MAIL_SECURE === 'true' : false,
+  user: process.env.MAIL_USER || 'dev.teste@etic.co.ao',
+  pass: process.env.MAIL_PASSWORD || 'Root!12345',
+  from: process.env.MAIL_FROM || '"Eduall Software" <dev.teste@etic.co.ao>',
+};
 
-if (!process.env.MAIL_HOST || !process.env.MAIL_USER || !process.env.MAIL_PASSWORD) {
-  console.warn('[mail] AVISO: falta configuração de email no .env (MAIL_HOST/MAIL_USER/MAIL_PASSWORD). As notificações por email não serão enviadas.');
-}
+const notifyEmails = (process.env.NOTIFY_EMAILS || 'vicentemanueleduardo@gmail.com,kiossocamuegi@gmail.com')
+  .split(',').map(e => e.trim()).filter(Boolean);
 
 function createTransporter() {
   return nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT || 465),
-    secure: process.env.MAIL_SECURE !== 'false',
+    host: mailConfig.host,
+    port: mailConfig.port,
+    secure: mailConfig.secure,
     auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASSWORD,
+      user: mailConfig.user,
+      pass: mailConfig.pass,
     },
   });
 }
@@ -29,7 +35,7 @@ function escHtml(s) {
 async function sendMail(opts) {
   const to = [].concat(opts.to || []).filter(Boolean);
   if (!to.length) return { ok: false, error: 'Sem destinatários' };
-  const from = opts.from || process.env.MAIL_FROM || '"Eduall Software" <noreply@eduall.site>';
+  const from = opts.from || mailConfig.from;
   try {
     await transporter.sendMail({ from, to: to.join(', '), subject: opts.subject, text: opts.text, html: opts.html });
     console.log('[mail] enviado para', to.join(', '));
@@ -90,4 +96,4 @@ function notifyOcorrencia(info) {
   sendMail({ to, subject: `${info.acao} — ${info.titulo}`, html, text });
 }
 
-module.exports = { sendMail, notifyOcorrencia, notifyEmails, escHtml };
+module.exports = { sendMail, notifyOcorrencia, notifyEmails, mailConfig, escHtml };
