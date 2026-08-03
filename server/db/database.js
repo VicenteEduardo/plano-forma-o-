@@ -271,6 +271,8 @@ async function initSchema() {
       INDEX idx_ge_escola (escola_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
+    try { await db.execute('ALTER TABLE gastos_escolas ADD COLUMN escola_nome VARCHAR(255) DEFAULT NULL'); } catch (_) {}
+
     try {
       await db.execute(`
         INSERT IGNORE INTO gastos_escolas (gasto_id, escola_id)

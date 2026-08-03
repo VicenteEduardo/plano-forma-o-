@@ -17,15 +17,15 @@ router.get('/', async (req, res, next) => {
     if (gastoIds.length) {
       const placeholders = gastoIds.map(() => '?').join(',');
       const escRows = await query(
-        `SELECT ge.gasto_id, e.id as escola_id, e.nome as escola_nome
+        `SELECT ge.gasto_id, ge.escola_id, COALESCE(NULLIF(ge.escola_nome,''), e.nome) as escola_nome
          FROM gastos_escolas ge
-         JOIN escolas e ON e.id = ge.escola_id
+         LEFT JOIN escolas e ON e.id = ge.escola_id
          WHERE ge.gasto_id IN (${placeholders})`,
         gastoIds
       );
       escRows.forEach(r => {
         if (!escolasMap[r.gasto_id]) escolasMap[r.gasto_id] = [];
-        escolasMap[r.gasto_id].push({ id: r.escola_id, nome: r.escola_nome });
+        escolasMap[r.gasto_id].push({ id: r.escola_id, nome: r.escola_nome || '' });
       });
 
       const missingIds = rows.filter(r => !escolasMap[r.id] && r.escola_id).map(r => r.escola_id);
@@ -67,13 +67,13 @@ router.get('/:id', async (req, res, next) => {
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     const r = rows[0];
     const escRows = await query(
-      `SELECT e.id as escola_id, e.nome as escola_nome
+      `SELECT ge.escola_id, COALESCE(NULLIF(ge.escola_nome,''), e.nome) as escola_nome
        FROM gastos_escolas ge
-       JOIN escolas e ON e.id = ge.escola_id
+       LEFT JOIN escolas e ON e.id = ge.escola_id
        WHERE ge.gasto_id=?`,
       [req.params.id]
     );
-    let escolas = escRows.map(e => ({ id: e.escola_id, nome: e.escola_nome }));
+    let escolas = escRows.map(e => ({ id: e.escola_id, nome: e.escola_nome || '' }));
     if (!escolas.length && r.escola_id) {
       const esc = await queryOne('SELECT id, nome FROM escolas WHERE id=?', [r.escola_id]);
       if (esc) escolas = [{ id: esc.id, nome: esc.nome }];
@@ -119,8 +119,12 @@ router.post('/', async (req, res, next) => {
     if (!b.tipo) return res.status(400).json({ error: 'Tipo é obrigatório' });
     const cat = ['tecnicos', 'comerciais'].includes(b.categoria) ? b.categoria : 'tecnicos';
 
-    const escolaIds = Array.isArray(b.escolaIds) ? b.escolaIds.filter(id => id && Number(id) > 0) : [];
-    if (b.escolaId && !escolaIds.length) escolaIds.push(Number(b.escolaId));
+    const escolas = Array.isArray(b.escolas) && b.escolas.length
+      ? b.escolas.filter(e => e && e.id && Number(e.id) > 0).map(e => ({ id: Number(e.id), nome: (e.nome || '') }))
+      : (Array.isArray(b.escolaIds) ? b.escolaIds.filter(id => id && Number(id) > 0) : [])
+        .map(eid => ({ id: Number(eid), nome: '' }));
+    if (b.escolaId && !escolas.length) escolas.push({ id: Number(b.escolaId), nome: '' });
+    const escolaIds = escolas.map(e => e.id);
 
     const pool = getPool();
     const now = new Date().toISOString().slice(0,10);
@@ -147,14 +151,12 @@ router.post('/', async (req, res, next) => {
     const gastoId = info.insertId;
 
     if (escolaIds.length) {
-      const values = escolaIds.map(eid => [gastoId, Number(eid)]);
+      const values = escolas.map(e => [gastoId, e.id, e.nome || null]);
       await pool.query(
-        'INSERT INTO gastos_escolas (gasto_id, escola_id) VALUES ?',
+        'INSERT INTO gastos_escolas (gasto_id, escola_id, escola_nome) VALUES ?',
         [values]
       );
     }
-
-    const escolas = escolaIds.map(eid => ({ id: Number(eid), nome: '' }));
 
     res.json({
       id: gastoId, tecnicoId: b.tecnicoId, escolas,
@@ -170,8 +172,12 @@ router.put('/:id', async (req, res, next) => {
     const now = new Date().toISOString().slice(0,10);
     const cat = ['tecnicos', 'comerciais'].includes(b.categoria) ? b.categoria : 'tecnicos';
 
-    const escolaIds = Array.isArray(b.escolaIds) ? b.escolaIds.filter(id => id && Number(id) > 0) : [];
-    if (b.escolaId && !escolaIds.length) escolaIds.push(Number(b.escolaId));
+    const escolas = Array.isArray(b.escolas) && b.escolas.length
+      ? b.escolas.filter(e => e && e.id && Number(e.id) > 0).map(e => ({ id: Number(e.id), nome: (e.nome || '') }))
+      : (Array.isArray(b.escolaIds) ? b.escolaIds.filter(id => id && Number(id) > 0) : [])
+        .map(eid => ({ id: Number(eid), nome: '' }));
+    if (b.escolaId && !escolas.length) escolas.push({ id: Number(b.escolaId), nome: '' });
+    const escolaIds = escolas.map(e => e.id);
 
     await query(
       'UPDATE gastos_logistica SET tecnico_id=?, tipo=?, valor=?, data=?, observacoes=?, categoria=? WHERE id=?',
@@ -181,9 +187,9 @@ router.put('/:id', async (req, res, next) => {
     const pool = getPool();
     await pool.query('DELETE FROM gastos_escolas WHERE gasto_id=?', [req.params.id]);
     if (escolaIds.length) {
-      const values = escolaIds.map(eid => [Number(req.params.id), Number(eid)]);
+      const values = escolas.map(e => [Number(req.params.id), e.id, e.nome || null]);
       await pool.query(
-        'INSERT INTO gastos_escolas (gasto_id, escola_id) VALUES ?',
+        'INSERT INTO gastos_escolas (gasto_id, escola_id, escola_nome) VALUES ?',
         [values]
       );
     }

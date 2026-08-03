@@ -477,6 +477,13 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 .ocor-thumb-strip img{width:44px;height:44px;border-radius:8px;object-fit:cover;}
 .ocor-thumb-more{width:44px;height:44px;border-radius:8px;background:#EEF0F7;color:var(--ink-500);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
 .ocor-media-placeholder{width:44px;height:44px;border-radius:8px;background:#EEF0F7;color:var(--ink-300);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ocor-editor-toolbar{display:flex; align-items:center; gap:4px; padding:6px; background:var(--paper); border:1px solid var(--line); border-bottom:none; border-radius:10px 10px 0 0;}
+.ocor-editor-btn{width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:none; background:transparent; border-radius:7px; color:var(--ink-700); cursor:pointer; font-size:14px;}
+.ocor-editor-btn:hover{background:#fff; box-shadow:0 1px 4px rgba(22,27,51,.12); color:var(--brand-600);}
+.ocor-editor-btn.active{background:var(--brand-100); color:var(--brand-600);}
+.ocor-editor{min-height:96px; padding:10px 12px; background:#fff; border:1px solid var(--line); border-radius:0 0 10px 10px; font-size:14px; line-height:1.6; color:var(--ink-900); outline:none; overflow-wrap:break-word;}
+.ocor-editor:empty:before{content:attr(data-placeholder); color:var(--ink-300); pointer-events:none;}
+.ocor-editor:focus{border-color:var(--brand-500);}
 ::-webkit-scrollbar{height:8px; width:8px;}
 ::-webkit-scrollbar-thumb{background:#D5D7EA; border-radius:10px;}
 @media (max-width:991px){
@@ -1000,7 +1007,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           <input type="text" class="form-control" id="gastosSearch" placeholder="Pesquisar...">
           <select class="form-select" id="gastosFilterTipo">
             <option value="todos">Todos os tipos</option>
-            <option>Formação</option><option>Reunião</option><option>Apresentação do Sistema</option><option>Carregamento de Internet</option><option>Outros</option>
+            <option>Formação</option><option>Reunião</option><option>Apresentação do Sistema</option><option>Carregamento de Internet</option><option>Internet</option><option>Saldo de voz</option><option>Outros</option>
           </select>
           <select class="form-select" id="gastosFilterTecnico"><option value="todos">Todos os técnicos</option></select>
           <select class="form-select" id="gastosFilterEscola"><option value="todos">Todas as escolas</option></select>
@@ -1372,7 +1379,16 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </div>
             <div class="col-12">
               <label class="form-label">Descrição do problema</label>
-              <textarea class="form-control" id="ocorDescricao" rows="3" required placeholder="Descreva o problema relatado pelo cliente..."></textarea>
+              <div class="ocor-editor-toolbar" id="ocorDescToolbar">
+                <button type="button" class="ocor-editor-btn" data-cmd="bold" title="Negrito"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="italic" title="Itálico"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="underline" title="Sublinhado"><i class="bi bi-type-underline"></i></button>
+                <span style="width:1px;height:20px;background:var(--line);margin:0 4px;"></span>
+                <button type="button" class="ocor-editor-btn" data-cmd="insertUnorderedList" title="Lista com marcadores"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="insertOrderedList" title="Lista numerada"><i class="bi bi-list-ol"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="formatBlock" data-val="H2" title="Título"><i class="bi bi-heading"></i></button>
+              </div>
+              <div class="ocor-editor" id="ocorDescricao" contenteditable="true" data-placeholder="Descreva o problema relatado pelo cliente..."></div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Técnico responsável</label>
@@ -2016,6 +2032,8 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                 <option>Reunião</option>
                 <option>Apresentação do Sistema</option>
                 <option>Carregamento de Internet</option>
+                <option>Internet</option>
+                <option>Saldo de voz</option>
                 <option>Outros</option>
               </select>
             </div>
@@ -2029,7 +2047,15 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </div>
             <div class="col-12">
               <label class="form-label">Observações</label>
-              <textarea class="form-control" id="gastoObservacoes" rows="2" placeholder="Detalhes do gasto..."></textarea>
+              <div class="ocor-editor-toolbar" id="gastoObsToolbar">
+                <button type="button" class="ocor-editor-btn" data-cmd="bold" title="Negrito"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="italic" title="Itálico"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="underline" title="Sublinhado"><i class="bi bi-type-underline"></i></button>
+                <span style="width:1px;height:20px;background:var(--line);margin:0 4px;"></span>
+                <button type="button" class="ocor-editor-btn" data-cmd="insertUnorderedList" title="Lista com marcadores"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="ocor-editor-btn" data-cmd="insertOrderedList" title="Lista numerada"><i class="bi bi-list-ol"></i></button>
+              </div>
+              <div class="ocor-editor" id="gastoObservacoes" contenteditable="true" data-placeholder="Detalhes do gasto..."></div>
             </div>
           </div>
         </form>
@@ -2325,6 +2351,7 @@ document.getElementById('novaEscolaSaveBtn').addEventListener('click', async ()=
     Object.values(_multiSchoolSelects).forEach(w=>{
       if(w && w.__addSchool) w.__addSchool(nova);
     });
+    if(typeof populateGastosSelects === 'function') populateGastosSelects();
   }catch(e){ console.error('Erro ao criar escola:', e); showToast('Erro ao criar escola: '+e.message,'error'); }
 });
 
@@ -3908,7 +3935,10 @@ function openOcorrenciaModal(id){
       document.getElementById('ocorId').value = o.id;
       document.getElementById('ocorTitulo').value = o.titulo;
       _schoolSelects['ssWrapOcorEscola'].__setValue(o.escolaId||null);
-      document.getElementById('ocorDescricao').value = o.descricao||'';
+      const descEl = document.getElementById('ocorDescricao');
+      const d = o.descricao||'';
+      if(/<[a-z][\s\S]*>/i.test(d)) descEl.innerHTML = d;
+      else descEl.textContent = d;
       document.getElementById('ocorTecnico').value = o.tecnicoId||'';
       document.getElementById('ocorEvento').value = o.eventoId||'';
       document.getElementById('ocorPrioridade').value = o.prioridade;
@@ -3958,6 +3988,7 @@ function resetOcorForm(){
   document.getElementById('ocorEstado').value = 'Aberta';
   document.getElementById('ocorFotoInput').value = '';
   document.getElementById('ocorVideoInput').value = '';
+  document.getElementById('ocorDescricao').innerHTML = '';
   document.getElementById('ocorModalTitle').innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i>Nova ocorrência';
   document.getElementById('ocorSaveBtn').innerHTML = 'Guardar ocorrência';
   renderOcorGallery();
@@ -4043,18 +4074,36 @@ ocorVideoDz.addEventListener('drop', (e)=>{
   if(e.dataTransfer.files[0]) handleOcorVideoFile(e.dataTransfer.files[0]);
 });
 
+document.getElementById('ocorDescToolbar').addEventListener('mousedown', (e)=>{
+  const btn = e.target.closest('button[data-cmd]');
+  if(!btn) return;
+  e.preventDefault();
+  document.execCommand(btn.dataset.cmd, false, btn.dataset.val || null);
+  document.getElementById('ocorDescricao').focus();
+});
+
+document.getElementById('gastoObsToolbar').addEventListener('mousedown', (e)=>{
+  const btn = e.target.closest('button[data-cmd]');
+  if(!btn) return;
+  e.preventDefault();
+  document.execCommand(btn.dataset.cmd, false, btn.dataset.val || null);
+  document.getElementById('gastoObservacoes').focus();
+});
+
 document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('ocorSaveBtn');
   const isEdit = !!editingOcorId;
   try{
     const titulo = document.getElementById('ocorTitulo').value.trim();
-    const descricao = document.getElementById('ocorDescricao').value.trim();
+    const descEl = document.getElementById('ocorDescricao');
+    const descricao = descEl.innerText.trim();
+    const descricaoHtml = descEl.innerHTML;
     if(!titulo){ showToast('O título da ocorrência é obrigatório.','warning'); return; }
     if(!descricao){ showToast('A descrição do problema é obrigatória.','warning'); return; }
     const payload = {
       titulo,
       escolaId: document.getElementById('ocorEscolaId').value ? Number(document.getElementById('ocorEscolaId').value) : null,
-      descricao,
+      descricao: descricaoHtml,
       tecnicoId: document.getElementById('ocorTecnico').value ? Number(document.getElementById('ocorTecnico').value) : null,
       eventoId: document.getElementById('ocorEvento').value ? Number(document.getElementById('ocorEvento').value) : null,
       prioridade: document.getElementById('ocorPrioridade').value,
@@ -4124,7 +4173,13 @@ function renderOcorrencias(){
     (fPrio==='todos' || o.prioridade===fPrio) &&
     (fEsc==='todos' || Number(o.escolaId)===Number(fEsc))
   );
-  list.sort((a,b)=> b.atualizadoEm.localeCompare(a.atualizadoEm));
+  const estadoPeso = {'Aberta':0,'Em análise':1,'Resolvida':2,'Cancelada':3};
+  list.sort((a,b)=>{
+    const pa = estadoPeso[a.estado] ?? 2;
+    const pb = estadoPeso[b.estado] ?? 2;
+    if(pa !== pb) return pa - pb;
+    return b.atualizadoEm.localeCompare(a.atualizadoEm);
+  });
 
   const pgMeta = paginateSlice(list, 'ocorrencias', 10);
   renderPaginationBar('pgOcorrencias','ocorrencias', pgMeta, renderOcorrencias);
@@ -4154,7 +4209,6 @@ function renderOcorrencias(){
             <div class="fw-bold" style="font-size:14px;">${o.titulo}</div>
             <div style="font-size:11px; color:var(--ink-500);">Atualizado em ${fmtDatePt(o.atualizadoEm)}</div>
           </div>
-          <div style="font-size:12.5px; color:var(--ink-700); overflow-wrap:anywhere;" class="mb-2">${o.descricao}</div>
           <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
             ${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}
             ${o.hasVideo? `<span class="chip chip-info"><i class="bi bi-camera-video"></i>Vídeo anexado</span>`:''}
@@ -4181,11 +4235,28 @@ function renderOcorrencias(){
 }
 
 let viewerOcorId = null;
+let ocorCommentsExpanded = false;
+let _ocorCommentsCache = [];
 const ocorViewerModal = new bootstrap.Modal(document.getElementById('ocorViewerModal'));
+
+function formatOcorDescricao(html){
+  if(!html) return '';
+  if(/<[a-z][\s\S]*>/i.test(html)) return html;
+  return html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function stripHtml(html){
+  if(!html) return '';
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  return d.textContent || '';
+}
 
 async function openOcorViewer(ocorId){
   const o = OCORRENCIAS.find(x=>x.id===ocorId);
   viewerOcorId = ocorId;
+  ocorCommentsExpanded = false;
+  _ocorCommentsCache = [];
   const body = document.getElementById('ocorViewerBody');
   body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">A carregar...</div></div>';
   ocorViewerModal.show();
@@ -4207,7 +4278,10 @@ async function openOcorViewer(ocorId){
     <div style="font-size:11px; color:var(--ink-500);">Criada em ${fmtDatePt(o.criadoEm)} · Atualizada em ${fmtDatePt(o.atualizadoEm)}</div>
   </div>`;
   html += `<div class="d-flex align-items-center flex-wrap gap-2 mb-2">${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}</div>`;
-  html += `<div style="font-size:12.5px; color:var(--ink-700); overflow-wrap:anywhere; margin-bottom:10px;">${o.descricao}</div>`;
+  html += `<div class="mb-3">
+    <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink-700);"><i class="bi bi-file-earmark-text me-1"></i>Descrição</div>
+    <div style="background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14.5px; line-height:1.75; color:var(--ink-900); overflow-wrap:break-word;">${formatOcorDescricao(o.descricao)}</div>
+  </div>`;
   let escolaHtml = '';
   if(o.escolaId){
     const oEsc = escolaById(o.escolaId);
@@ -4238,11 +4312,16 @@ async function openOcorViewer(ocorId){
 
 function renderOcorViewerComentarios(ocorId, comentarios){
   const wrap = document.getElementById('ocorViewerComentarios');
-  let html = `<div style="font-size:13px; font-weight:600; margin-bottom:8px;"><i class="bi bi-chat-left-text me-1"></i>Comentários (${(comentarios||[]).length})</div>`;
-  if(!(comentarios||[]).length){
-    html += '<div class="text-muted" style="font-size:12px; margin-bottom:10px;">Sem comentários ainda. Adiciona o primeiro abaixo.</div>';
-  } else {
-    html += comentarios.map(c=>{
+  _ocorCommentsCache = comentarios || [];
+  const total = _ocorCommentsCache.length;
+  let html = `<div style="font-size:13px; font-weight:600; margin-bottom:6px;"><i class="bi bi-chat-left-text me-1"></i>Comentários (${total})</div>`;
+  if(total){
+    html += `<button type="button" class="btn btn-link p-0 text-decoration-none mb-1" style="color:var(--brand,#453FCB); font-size:12.5px; font-weight:600; border:0; vertical-align:baseline;" onclick="toggleOcorComentarios(${ocorId})">
+      <i class="bi ${ocorCommentsExpanded?'bi-chevron-up':'bi-chevron-down'} me-1"></i>${ocorCommentsExpanded?'Ocultar comentários':'Ver todos os comentários'} (${total})
+    </button>`;
+  }
+  if(ocorCommentsExpanded){
+    html += '<div style="margin-top:6px;">' + _ocorCommentsCache.map(c=>{
       const ct = c.tecnicoId ? techById(c.tecnicoId) : null;
       return `<div class="d-flex justify-content-between align-items-start gap-2" style="background:#EEF0F7; border-radius:8px; padding:6px 10px; margin-bottom:6px;">
         <div style="font-size:12px; color:var(--ink-700); overflow-wrap:anywhere;">${c.comentario}
@@ -4250,7 +4329,9 @@ function renderOcorViewerComentarios(ocorId, comentarios){
         </div>
         <button class="btn btn-sm btn-light border flex-shrink-0" style="padding:1px 6px; font-size:11px;" onclick="deleteOcorComentario(${ocorId}, ${c.id})"><i class="bi bi-trash"></i></button>
       </div>`;
-    }).join('');
+    }).join('') + '</div>';
+  } else if(!total){
+    html += '<div class="text-muted" style="font-size:12px; margin-bottom:10px;">Sem comentários ainda. Adiciona o primeiro abaixo.</div>';
   }
   const tecOptions = '<option value="">— Técnico —</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   html += `<div style="margin-top:10px; border-top:1px dashed var(--line); padding-top:10px;">
@@ -4267,6 +4348,11 @@ function renderOcorViewerComentarios(ocorId, comentarios){
     </div>
   </div>`;
   wrap.innerHTML = html;
+}
+
+function toggleOcorComentarios(ocorId){
+  ocorCommentsExpanded = !ocorCommentsExpanded;
+  renderOcorViewerComentarios(ocorId, _ocorCommentsCache);
 }
 
 async function addOcorComentario(ocorId){
@@ -5432,11 +5518,13 @@ function populateGastosSelects(){
   const selTec = document.getElementById('gastoTecnico');
   selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
   const selFilter = document.getElementById('gastosFilterTecnico');
+  const prevTec = selFilter.value;
   selFilter.innerHTML = '<option value="todos">Todos os técnicos</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  selFilter.value = prevTec;
   const selEsc = document.getElementById('gastosFilterEscola');
-  if(selEsc.options.length <= 1){
-    selEsc.innerHTML = '<option value="todos">Todas as escolas</option>' + ESCOLAS.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
-  }
+  const prevEsc = selEsc.value;
+  selEsc.innerHTML = '<option value="todos">Todas as escolas</option>' + ESCOLAS.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  selEsc.value = prevEsc;
 }
 
 function getGastosFiltrados(){
@@ -5458,14 +5546,14 @@ function getGastosFiltrados(){
     if(fDe && g.data < fDe) return false;
     if(fAte && g.data > fAte) return false;
     const escolaNomes = (g.escolas||[]).map(e=>e.nome||'').join(' ');
-    if(search && !(g.tecnicoNome||'').toLowerCase().includes(search) && !escolaNomes.toLowerCase().includes(search) && !(g.observacoes||'').toLowerCase().includes(search) && !(g.tipo||'').toLowerCase().includes(search)) return false;
+    if(search && !(g.tecnicoNome||'').toLowerCase().includes(search) && !escolaNomes.toLowerCase().includes(search) && !stripHtml(g.observacoes||'').toLowerCase().includes(search) && !(g.tipo||'').toLowerCase().includes(search)) return false;
     return true;
   });
 }
 
 function renderGastosAnalytics(list){
   const total = list.reduce((s,g)=>s+g.valor, 0);
-  const tipoColors = {'Formação':'#12A972','Reunião':'#E08A2E','Apresentação do Sistema':'#7C3AED','Carregamento de Internet':'#2E9BE0','Outros':'#6B7093'};
+  const tipoColors = {'Formação':'#12A972','Reunião':'#E08A2E','Apresentação do Sistema':'#7C3AED','Carregamento de Internet':'#2E9BE0','Internet':'#0EA5A5','Saldo de voz':'#9B5DE5','Outros':'#6B7093'};
 
   const porTipo = {};
   list.forEach(g=>{ porTipo[g.tipo] = (porTipo[g.tipo]||0) + g.valor; });
@@ -5549,7 +5637,7 @@ function renderGastos(){
   }
   tbody.innerHTML = page.map(g=>{
     const t = techById(g.tecnicoId);
-    const tipoChip = {'Formação':'chip-info','Reunião':'chip-warning','Apresentação do Sistema':'chip-purple','Outros':'chip-muted'}[g.tipo]||'chip-muted';
+    const tipoChip = {'Formação':'chip-info','Reunião':'chip-warning','Apresentação do Sistema':'chip-purple','Internet':'chip-info','Saldo de voz':'chip-purple','Outros':'chip-muted'}[g.tipo]||'chip-muted';
     const catLabel = g.categoria==='comerciais' ? '<span class="chip" style="background:#F3E5F5;color:#7B1FA2;font-size:10px;">Comercial</span>' : '<span class="chip" style="background:#E3F2FD;color:#1565C0;font-size:10px;">Técnico</span>';
     return `<tr style="cursor:pointer;" onclick="openGastoModal(${g.id})">
       <td style="font-size:12.5px;">${fmtDatePt(g.data)}</td>
@@ -5563,7 +5651,7 @@ function renderGastos(){
       <td style="font-size:12.5px;">${(g.escolas||[]).length ? g.escolas.map(e=>`<span class="chip" style="background:var(--brand-50);color:var(--brand-700);font-size:10px;margin:1px;">${e.nome}</span>`).join(' ') : '-'}</td>
       <td><span class="chip ${tipoChip}" style="font-size:11px;">${g.tipo}</span></td>
       <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(g.valor)} Kz</td>
-      <td style="font-size:12px; color:var(--ink-500); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.observacoes||''}</td>
+      <td style="font-size:12px; color:var(--ink-500); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${stripHtml(g.observacoes)||''}</td>
       <td class="text-end">
         <button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openGastoModal(${g.id})"><i class="bi bi-pencil"></i></button>
       </td>
@@ -5637,6 +5725,7 @@ function openGastoModal(id){
   document.getElementById('gastoForm').reset();
   document.getElementById('gastoId').value = '';
   document.getElementById('gastoData').value = iso(today);
+  document.getElementById('gastoObservacoes').innerHTML = '';
   _multiSchoolSelects['ssWrapGastoEscola'].__clear();
   document.getElementById('gastoSaldoInfo').style.display = 'none';
   document.getElementById('gastoDeleteBtn').classList.add('d-none');
@@ -5661,7 +5750,10 @@ function openGastoModal(id){
       document.getElementById('gastoTipo').value = g.tipo;
       document.getElementById('gastoValor').value = g.valor;
       document.getElementById('gastoData').value = g.data;
-      document.getElementById('gastoObservacoes').value = g.observacoes||'';
+      const obsEl = document.getElementById('gastoObservacoes');
+      const obs = g.observacoes||'';
+      if(/<[a-z][\s\S]*>/i.test(obs)) obsEl.innerHTML = obs;
+      else obsEl.textContent = obs;
       document.getElementById('gastoDeleteBtn').classList.remove('d-none');
       document.getElementById('gastoSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar gasto';
       document.getElementById('gastoCategoria').dispatchEvent(new Event('change'));
@@ -5706,12 +5798,14 @@ document.getElementById('gastoSaveBtn').addEventListener('click', async ()=>{
     if(!tecnicoId){ showToast('Selecione o técnico.','warning'); return; }
     if(!tipo){ showToast('Selecione o tipo de gasto.','warning'); return; }
     if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
+    const selEscolas = (_multiSchoolSelects['ssWrapGastoEscola'] ? _multiSchoolSelects['ssWrapGastoEscola'].__getIds() : [])
+      .map(id => { const e = escolaById(id); return e ? { id: e.id, nome: e.nome } : { id, nome: '' }; });
     const data = {
       tecnicoId: Number(tecnicoId),
-      escolaIds: _multiSchoolSelects['ssWrapGastoEscola'] ? _multiSchoolSelects['ssWrapGastoEscola'].__getIds() : [],
+      escolas: selEscolas,
       tipo, valor, categoria,
       data: document.getElementById('gastoData').value || iso(today),
-      observacoes: document.getElementById('gastoObservacoes').value.trim(),
+      observacoes: document.getElementById('gastoObservacoes').innerHTML.trim(),
     };
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
     if(isEdit){
@@ -5836,7 +5930,7 @@ function pdfGastos(){
 
   const rows = list.map(g=>{
     const catLabel = g.categoria==='comerciais'?'Comercial':'Técnico';
-    return [fmtDatePt(g.data), catLabel, g.tecnicoNome||'-', (g.escolas||[]).map(e=>e.nome).join(', ')||'-', g.tipo, fmtNum(g.valor)+' Kz', g.observacoes||''];
+    return [fmtDatePt(g.data), catLabel, g.tecnicoNome||'-', (g.escolas||[]).map(e=>e.nome).join(', ')||'-', g.tipo, fmtNum(g.valor)+' Kz', stripHtml(g.observacoes)||''];
   });
   doc.autoTable({
     startY:y, head:[['Data','Categoria','Técnico','Escola','Tipo','Valor','Observação']], body:rows,
