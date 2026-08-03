@@ -839,6 +839,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             <option value="todos">Todos os responsáveis</option>
             <option>Técnico</option><option>Comercial</option><option>Ambos</option>
           </select>
+          <input type="date" class="form-control" id="evtFilterDe" title="Data inicial" style="max-width:150px;">
+          <input type="date" class="form-control" id="evtFilterAte" title="Data final" style="max-width:150px;">
+          <button class="btn btn-outline-secondary btn-sm" onclick="limparFiltrosEventos()" title="Limpar filtros de datas"><i class="bi bi-x-lg"></i></button>
           <button class="btn btn-soft btn-sm avail-trigger-btn" onclick="openAvailabilityModal()"><i class="bi bi-search me-1"></i>Verificar disponibilidade</button>
           <button class="btn btn-outline-secondary btn-sm avail-trigger-btn" onclick="openNotasModal()"><i class="bi bi-sticky me-1"></i>Notas &amp; observações</button>
           <button class="btn btn-outline-danger btn-sm" onclick="pdfEventos()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
@@ -3516,6 +3519,31 @@ function populateEvtTableFilters(){
   const selTy = document.getElementById('evtFilterTipo');
   if(selTy.options.length<=1) selTy.innerHTML = '<option value="todos">Todos os tipos</option>' + EVENT_TYPES.map(t=>`<option value="${t.id}">${t.id}</option>`).join('');
 }
+function getEventosFiltrados(){
+  const search = (document.getElementById('evtSearch').value||'').toLowerCase();
+  const fTipo = document.getElementById('evtFilterTipo').value;
+  const fEstado = document.getElementById('evtFilterEstado').value;
+  const fResp = document.getElementById('evtFilterResponsavel').value;
+  const fDe = document.getElementById('evtFilterDe').value;
+  const fAte = document.getElementById('evtFilterAte').value;
+  return EVENTOS.filter(e=>{
+    const t = techById(e.tecnicoId);
+    const esc = e.escolaId ? escolaById(e.escolaId) : null;
+    const hay = (e.titulo+' '+(t?t.nome:'')+' '+(e.local||'')+' '+(e.observacoes||'')+' '+(e.descricao||'')+' '+(esc?esc.nome:'')+' '+e.estado+' '+e.data).toLowerCase();
+    if(search && !hay.includes(search)) return false;
+    if(fTipo!=='todos' && e.tipo!==fTipo) return false;
+    if(fEstado!=='todos' && e.estado!==fEstado) return false;
+    if(fResp!=='todos' && e.responsavel!==fResp) return false;
+    if(fDe && e.data < fDe) return false;
+    if(fAte && e.data > fAte) return false;
+    return true;
+  });
+}
+function limparFiltrosEventos(){
+  document.getElementById('evtFilterDe').value = '';
+  document.getElementById('evtFilterAte').value = '';
+  renderEventosTable();
+}
 function prioridadeDot(p){
   const c = p==='Alta'?'var(--bad)': p==='Média'?'var(--warn)':'var(--ok)';
   return `<span class="priority-dot" style="background:${c};"></span>`;
@@ -3526,20 +3554,7 @@ function estadoEventoChip(estado){
 }
 function renderEventosTable(){
   populateEvtTableFilters();
-  const search = (document.getElementById('evtSearch').value||'').toLowerCase();
-  const fTipo = document.getElementById('evtFilterTipo').value;
-  const fEstado = document.getElementById('evtFilterEstado').value;
-  const fResp = document.getElementById('evtFilterResponsavel').value;
-
-  let list = EVENTOS.filter(e=>{
-    const t = techById(e.tecnicoId);
-    const esc = e.escolaId ? escolaById(e.escolaId) : null;
-    const hay = (e.titulo+' '+(t?t.nome:'')+' '+(e.local||'')+' '+(e.observacoes||'')+' '+(e.descricao||'')+' '+(esc?esc.nome:'')+' '+e.estado+' '+e.data).toLowerCase();
-    return (!search || hay.includes(search)) &&
-      (fTipo==='todos' || e.tipo===fTipo) &&
-      (fEstado==='todos' || e.estado===fEstado) &&
-      (fResp==='todos' || e.responsavel===fResp);
-  });
+  let list = getEventosFiltrados();
 
   list.sort((a,b)=>{
     let va, vb;
@@ -3592,7 +3607,7 @@ function quickDeleteEvent(id){
   if(!confirm('Remover este evento?')) return;
   apiDelete('/eventos/'+id).then(()=> loadAllData().then(()=> refreshAll())).catch(e=>{ console.error('Erro ao remover evento:', e); showToast('Erro ao remover evento: '+e.message,'error'); });
 }
-['evtSearch','evtFilterTipo','evtFilterEstado','evtFilterResponsavel'].forEach(id=>{
+['evtSearch','evtFilterTipo','evtFilterEstado','evtFilterResponsavel','evtFilterDe','evtFilterAte'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderEventosTable);
   document.getElementById(id).addEventListener('change', renderEventosTable);
 });
@@ -4714,9 +4729,15 @@ function _pdfBase(orientation){
 
 function pdfEventos(){
   const p = _pdfBase();
-  const wk = currentWeekRange();
-  p.drawHeader('Relatório de Eventos', 'Período: '+fmtDatePt(wk.from)+' — '+fmtDatePt(wk.to));
-  const rows = EVENTOS.filter(e=> e.data>=wk.from && e.data<=wk.to).sort((a,b)=>(a.data+a.horaInicio).localeCompare(b.data+b.horaInicio));
+  const rows = getEventosFiltrados().sort((a,b)=>(a.data+a.horaInicio).localeCompare(b.data+b.horaInicio));
+  const de = document.getElementById('evtFilterDe').value;
+  const ate = document.getElementById('evtFilterAte').value;
+  let periodo;
+  if(de && ate) periodo = fmtDatePt(de)+' — '+fmtDatePt(ate);
+  else if(de) periodo = 'Desde '+fmtDatePt(de);
+  else if(ate) periodo = 'Até '+fmtDatePt(ate);
+  else periodo = 'Todos os eventos';
+  p.drawHeader('Relatório de Eventos', 'Período: '+periodo);
   const body = rows.map(e=>{
     const t = e.tecnicoId ? techById(e.tecnicoId) : null;
     const esc = e.escolaId ? escolaById(e.escolaId) : null;
@@ -5663,7 +5684,7 @@ function renderGastos(){
           <span style="font-size:13px;">${g.tecnicoNome||'-'}</span>
         </div>
       </td>
-      <td style="font-size:12.5px;">${(g.escolas||[]).length ? g.escolas.map(e=>`<span class="chip" style="background:var(--brand-50);color:var(--brand-700);font-size:10px;margin:1px;">${e.nome}</span>`).join(' ') : '-'}</td>
+      <td style="font-size:12.5px;">${(g.escolas||[]).length ? g.escolas.map(e=>`<span class="chip" style="background:var(--brand-50);color:var(--brand-700);font-size:10px;margin:1px;">${e.nome}</span>`).join(' ') : '<span class="chip" style="background:#FFF3E0;color:#E65100;font-size:10px;"><i class="bi bi-exclamation-triangle me-1"></i>Sem escola</span>'}</td>
       <td><span class="chip ${tipoChip}" style="font-size:11px;">${g.tipo}</span></td>
       <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(g.valor)} Kz</td>
       <td style="font-size:12px; color:var(--ink-500); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${stripHtml(g.observacoes)||''}</td>
@@ -5815,6 +5836,7 @@ document.getElementById('gastoSaveBtn').addEventListener('click', async ()=>{
     if(!valor || valor<=0){ showToast('Insira um valor válido.','warning'); return; }
     const selEscolas = (_multiSchoolSelects['ssWrapGastoEscola'] ? _multiSchoolSelects['ssWrapGastoEscola'].__getIds() : [])
       .map(id => { const e = escolaById(id); return e ? { id: e.id, nome: e.nome } : { id, nome: '' }; });
+    if(!selEscolas.length && !confirm('Este gasto não tem nenhuma escola associada.\nPretendes registar mesmo assim?')) return;
     const data = {
       tecnicoId: Number(tecnicoId),
       escolas: selEscolas,
