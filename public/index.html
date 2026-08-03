@@ -484,6 +484,15 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
 .ocor-editor{min-height:96px; padding:10px 12px; background:#fff; border:1px solid var(--line); border-radius:0 0 10px 10px; font-size:14px; line-height:1.6; color:var(--ink-900); outline:none; overflow-wrap:break-word;}
 .ocor-editor:empty:before{content:attr(data-placeholder); color:var(--ink-300); pointer-events:none;}
 .ocor-editor:focus{border-color:var(--brand-500);}
+.ocor-comment{display:flex; align-items:flex-start; gap:10px; margin-bottom:12px;}
+.ocor-comment-bubble{flex:1; min-width:0; background:#F0F1F7; border-radius:16px; padding:8px 12px;}
+.ocor-comment-head{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.ocor-comment-author{font-size:12.5px; font-weight:700; color:var(--ink-900);}
+.ocor-comment-time{font-size:11px; color:var(--ink-500);}
+.ocor-comment-text{font-size:13px; line-height:1.6; color:var(--ink-700); white-space:pre-wrap; overflow-wrap:break-word; margin-top:2px;}
+.ocor-comment-input{display:flex; gap:10px;}
+.ocor-comment-input textarea{flex:1; border:1px solid var(--line); border-radius:14px; resize:none; padding:10px 12px; font-size:13px;}
+.ocor-comment-input textarea:focus{border-color:var(--brand-500); outline:none;}
 ::-webkit-scrollbar{height:8px; width:8px;}
 ::-webkit-scrollbar-thumb{background:#D5D7EA; border-radius:10px;}
 @media (max-width:991px){
@@ -2351,6 +2360,7 @@ document.getElementById('novaEscolaSaveBtn').addEventListener('click', async ()=
     Object.values(_multiSchoolSelects).forEach(w=>{
       if(w && w.__addSchool) w.__addSchool(nova);
     });
+    if(document.getElementById('view-gastos').classList.contains('active')) renderGastos();
     if(typeof populateGastosSelects === 'function') populateGastosSelects();
   }catch(e){ console.error('Erro ao criar escola:', e); showToast('Erro ao criar escola: '+e.message,'error'); }
 });
@@ -4323,28 +4333,33 @@ function renderOcorViewerComentarios(ocorId, comentarios){
   if(ocorCommentsExpanded){
     html += '<div style="margin-top:6px;">' + _ocorCommentsCache.map(c=>{
       const ct = c.tecnicoId ? techById(c.tecnicoId) : null;
-      return `<div class="d-flex justify-content-between align-items-start gap-2" style="background:#EEF0F7; border-radius:8px; padding:6px 10px; margin-bottom:6px;">
-        <div style="font-size:12px; color:var(--ink-700); overflow-wrap:anywhere;">${c.comentario}
-          <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">${ct? `<i class="bi bi-person me-1"></i>${ct.nome}` : '<i class="bi bi-person me-1"></i>Anónimo'} · ${fmtDateTimePt(c.criadoEm)}</div>
+      const avatar = ct
+        ? techFotoEl(ct, 36)
+        : `<div class="avatar" style="width:36px;height:36px;font-size:14px;background:var(--ink-300);flex-shrink:0;"><i class="bi bi-person-fill"></i></div>`;
+      return `<div class="ocor-comment">
+        ${avatar}
+        <div class="ocor-comment-bubble">
+          <div class="ocor-comment-head">
+            <span class="ocor-comment-author">${ct ? ct.nome : 'Anónimo'}</span>
+            <button class="btn btn-light border flex-shrink-0" style="padding:1px 6px; font-size:11px;" title="Remover comentário" onclick="deleteOcorComentario(${ocorId}, ${c.id})"><i class="bi bi-trash"></i></button>
+          </div>
+          <div class="ocor-comment-time">${fmtDateTimePt(c.criadoEm)}</div>
+          <div class="ocor-comment-text">${c.comentario}</div>
         </div>
-        <button class="btn btn-sm btn-light border flex-shrink-0" style="padding:1px 6px; font-size:11px;" onclick="deleteOcorComentario(${ocorId}, ${c.id})"><i class="bi bi-trash"></i></button>
       </div>`;
     }).join('') + '</div>';
   } else if(!total){
     html += '<div class="text-muted" style="font-size:12px; margin-bottom:10px;">Sem comentários ainda. Adiciona o primeiro abaixo.</div>';
   }
   const tecOptions = '<option value="">— Técnico —</option>' + TECNICOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
-  html += `<div style="margin-top:10px; border-top:1px dashed var(--line); padding-top:10px;">
-    <div class="row g-2">
-      <div class="col-12">
-        <textarea id="ocorViewerComentarioTexto" class="form-control form-control-sm" rows="2" placeholder="Adicionar comentário..."></textarea>
-      </div>
-      <div class="col-7">
-        <select id="ocorViewerComentarioTecnico" class="form-select form-select-sm">${tecOptions}</select>
-      </div>
-      <div class="col-5">
-        <button class="btn btn-sm btn-brand w-100" onclick="addOcorComentario(${ocorId})"><i class="bi bi-plus-lg me-1"></i>Comentar</button>
-      </div>
+  html += `<div style="margin-top:12px; border-top:1px dashed var(--line); padding-top:12px;">
+    <div class="ocor-comment-input">
+      <div class="avatar" style="width:36px;height:36px;font-size:14px;background:var(--brand-100);color:var(--brand-600);flex-shrink:0;"><i class="bi bi-chat-left-text"></i></div>
+      <textarea id="ocorViewerComentarioTexto" class="form-control" rows="2" placeholder="Escreve um comentário..."></textarea>
+    </div>
+    <div class="d-flex justify-content-end align-items-center gap-2 mt-2">
+      <select id="ocorViewerComentarioTecnico" class="form-select form-select-sm" style="max-width:220px;">${tecOptions}</select>
+      <button class="btn btn-sm btn-brand" onclick="addOcorComentario(${ocorId})"><i class="bi bi-send me-1"></i>Comentar</button>
     </div>
   </div>`;
   wrap.innerHTML = html;
