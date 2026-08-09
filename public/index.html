@@ -1476,6 +1476,25 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<!-- ============ MODAL: VISUALIZAR FOTO DA OCORRÊNCIA ============ -->
+<div class="modal fade" id="ocorFotoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:96vw;">
+    <div class="modal-content" style="background:rgba(17,24,39,.97);border:0;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" style="color:#fff;"><i class="bi bi-image me-1"></i>Foto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body text-center p-2">
+        <img id="ocorFotoModalImg" src="" alt="Foto da ocorrência" style="max-width:100%;max-height:78vh;border-radius:8px;display:inline-block;">
+        <div class="mt-3 d-flex justify-content-center gap-2">
+          <button type="button" class="btn btn-light" id="ocorFotoModalPrev"><i class="bi bi-chevron-left"></i> Anterior</button>
+          <button type="button" class="btn btn-light" id="ocorFotoModalNext">Seguinte <i class="bi bi-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: PLANO DE FORMAÇÃO ============ -->
 <div class="modal fade" id="planoFormacaoModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -4278,6 +4297,31 @@ function stripHtml(html){
   return d.textContent || '';
 }
 
+let _ocorViewerFotos = [];
+let _ocorFotoIdx = 0;
+const ocorFotoModal = new bootstrap.Modal(document.getElementById('ocorFotoModal'));
+function showOcorFotoModalImg(){
+  const img = document.getElementById('ocorFotoModalImg');
+  img.src = _ocorViewerFotos[_ocorFotoIdx] || '';
+  const multi = _ocorViewerFotos.length > 1;
+  document.getElementById('ocorFotoModalPrev').style.visibility = multi ? 'visible' : 'hidden';
+  document.getElementById('ocorFotoModalNext').style.visibility = multi ? 'visible' : 'hidden';
+}
+function openOcorFoto(idx){
+  if(!_ocorViewerFotos.length) return;
+  _ocorFotoIdx = Math.min(Math.max(idx, 0), _ocorViewerFotos.length-1);
+  showOcorFotoModalImg();
+  ocorFotoModal.show();
+}
+document.getElementById('ocorFotoModalPrev').addEventListener('click', ()=>{
+  _ocorFotoIdx = (_ocorFotoIdx-1+_ocorViewerFotos.length)%_ocorViewerFotos.length;
+  showOcorFotoModalImg();
+});
+document.getElementById('ocorFotoModalNext').addEventListener('click', ()=>{
+  _ocorFotoIdx = (_ocorFotoIdx+1)%_ocorViewerFotos.length;
+  showOcorFotoModalImg();
+});
+
 async function openOcorViewer(ocorId){
   const o = OCORRENCIAS.find(x=>x.id===ocorId);
   viewerOcorId = ocorId;
@@ -4297,6 +4341,7 @@ async function openOcorViewer(ocorId){
   const t = techById(o.tecnicoId);
   const evt = o.eventoId ? EVENTOS.find(e=>e.id===o.eventoId) : null;
   const fotos = media.fotos || [];
+  _ocorViewerFotos = fotos;
   const video = media.video || null;
   let html = '';
   html += `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
@@ -4324,7 +4369,7 @@ async function openOcorViewer(ocorId){
   if(fotos.length || video){
     html += '<div style="font-size:13px; font-weight:600; margin-bottom:8px;"><i class="bi bi-images me-1"></i>Fotos e Vídeo</div>';
     if(fotos.length){
-      html += '<div class="d-flex flex-wrap gap-2 mb-2">' + fotos.map(src=>`<div style="position:relative;flex:0 0 auto;"><img src="${src}" style="max-height:220px;border-radius:8px;border:1px solid var(--line);cursor:pointer;" onclick="window.open('${src}','_blank')"></div>`).join('') + '</div>';
+      html += '<div class="d-flex flex-wrap gap-2 mb-2">' + fotos.map((src,i)=>`<div style="position:relative;flex:0 0 auto;"><img src="${src}" style="max-height:220px;border-radius:8px;border:1px solid var(--line);cursor:pointer;" onclick="openOcorFoto(${i})"></div>`).join('') + '</div>';
     }
     if(video){
       html += `<div><video src="${video}" controls style="max-width:100%;max-height:50vh;border-radius:8px;"></video></div>`;

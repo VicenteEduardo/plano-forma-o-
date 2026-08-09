@@ -32,6 +32,40 @@ function escHtml(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const RICH_CSS = {
+  h1: 'font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;margin:16px 0 8px;',
+  h2: 'font-size:18px;font-weight:700;color:#1f2937;line-height:1.35;margin:16px 0 8px;',
+  h3: 'font-size:16px;font-weight:700;color:#1f2937;line-height:1.35;margin:14px 0 6px;',
+  h4: 'font-size:15px;font-weight:700;color:#1f2937;line-height:1.35;margin:14px 0 6px;',
+  h5: 'font-size:14px;font-weight:700;color:#1f2937;line-height:1.35;margin:12px 0 6px;',
+  h6: 'font-size:13px;font-weight:700;color:#1f2937;line-height:1.35;margin:12px 0 6px;',
+  p: 'margin:0 0 10px;color:#4b5563;font-size:14.5px;line-height:1.7;',
+  ul: 'margin:0 0 12px;padding-left:20px;color:#4b5563;font-size:14.5px;line-height:1.7;',
+  ol: 'margin:0 0 12px;padding-left:20px;color:#4b5563;font-size:14.5px;line-height:1.7;',
+  li: 'margin:0 0 5px;',
+  blockquote: 'margin:0 0 10px;padding:8px 12px;border-left:3px solid #7c3aed;background:#f9fafb;color:#4b5563;font-size:14.5px;line-height:1.7;',
+};
+
+function sanitizeRich(html) {
+  return String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/javascript\s*:/gi, '');
+}
+
+function injectInlineStyles(html, rules) {
+  return Object.entries(rules).reduce((acc, [tag, css]) => {
+    const re = new RegExp('<' + tag + '(?![^>]*style\\s*=)([^>]*?)(/?)>', 'gi');
+    return acc.replace(re, '<' + tag + '$1 style="' + css + '"$2>');
+  }, html);
+}
+
+function renderRich(html) {
+  if (!html) return '';
+  if (!/<[a-z][\s\S]*>/i.test(html)) return escHtml(html).replace(/\n/g, '<br>');
+  return injectInlineStyles(sanitizeRich(html), RICH_CSS);
+}
+
 async function sendMail(opts) {
   const to = [].concat(opts.to || []).filter(Boolean);
   if (!to.length) return { ok: false, error: 'Sem destinatários' };
@@ -99,7 +133,7 @@ function notifyOcorrencia(info) {
               <div style="padding:20px;">${detalhes.join('')}${info.descricao ? `
                 <div>
                   <div style="color:#7c3aed;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Descrição</div>
-                  <div style="color:#1f2937;font-size:14px;font-weight:500;overflow-wrap:anywhere;">${escHtml(info.descricao)}</div>
+                  <div style="color:#1f2937;font-size:14px;font-weight:500;overflow-wrap:anywhere;">${renderRich(info.descricao)}</div>
                 </div>` : ''}</div>
             </div>
             <p style="color:#4b5563;font-size:15px;line-height:1.8;margin-bottom:12px;">Aceda ao portal para adicionar comentários, anexar fotos ou atualizar o estado da ocorrência.</p>
@@ -143,4 +177,4 @@ function notifyOcorrencia(info) {
   sendMail({ to, subject: `${info.acao} — ${info.titulo}`, html, text });
 }
 
-module.exports = { sendMail, notifyOcorrencia, notifyEmails, mailConfig, escHtml };
+module.exports = { sendMail, notifyOcorrencia, notifyEmails, mailConfig, escHtml, renderRich };
