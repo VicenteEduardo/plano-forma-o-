@@ -14,46 +14,10 @@ function mapPagamento(r) {
   };
 }
 
-router.get('/', async (req, res, next) => {
-  try {
-    let sql = `SELECT p.*, e.nome as escola_nome, f.numero as fatura_numero
-      FROM pagamentos p
-      LEFT JOIN escolas e ON e.id = p.escola_id
-      LEFT JOIN faturas f ON f.id = p.fatura_id`;
-    const params = [];
-    const wheres = [];
-    if (req.query.escola_id) { wheres.push('p.escola_id=?'); params.push(req.query.escola_id); }
-    if (req.query.estado) { wheres.push('p.estado=?'); params.push(req.query.estado); }
-    if (req.query.forma_pagamento) { wheres.push('p.forma_pagamento=?'); params.push(req.query.forma_pagamento); }
-    if (wheres.length) sql += ' WHERE ' + wheres.join(' AND ');
-    sql += ' ORDER BY p.data_pagamento DESC, p.id DESC';
-    const rows = await query(sql, params);
-    res.json(rows.map(mapPagamento));
-  } catch (err) {
-    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
-    next(err);
-  }
-});
-
-router.get('/:id', async (req, res, next) => {
-  try {
-    const r = await queryOne(
-      `SELECT p.*, e.nome as escola_nome, f.numero as fatura_numero
-       FROM pagamentos p
-       LEFT JOIN escolas e ON e.id=p.escola_id
-       LEFT JOIN faturas f ON f.id=p.fatura_id
-       WHERE p.id=?`,
-      [req.params.id]
-    );
-    if (!r) return res.status(404).json({ error: 'Pagamento não encontrado' });
-    res.json(mapPagamento(r));
-  } catch (err) { next(err); }
-});
-
 router.get('/resumo', async (req, res, next) => {
   try {
-    const total = await queryOne('SELECT COALESCE(SUM(valor),0) as total, COUNT(*) as cnt FROM pagamentos WHERE estado=\'Confirmado\'');
-    const pendentes = await queryOne('SELECT COALESCE(SUM(valor),0) as total, COUNT(*) as cnt FROM pagamentos WHERE estado=\'Pendente\'');
+    const total = await queryOne("SELECT COALESCE(SUM(valor),0) as total, COUNT(*) as cnt FROM pagamentos WHERE estado='Confirmado'");
+    const pendentes = await queryOne("SELECT COALESCE(SUM(valor),0) as total, COUNT(*) as cnt FROM pagamentos WHERE estado='Pendente'");
     const porEscola = await query(`
       SELECT e.nome, p.escola_id, SUM(p.valor) as total, COUNT(*) as cnt
       FROM pagamentos p LEFT JOIN escolas e ON e.id=p.escola_id
@@ -87,6 +51,42 @@ router.get('/resumo', async (req, res, next) => {
       porMes: porMes.map(r => ({ mes: r.mes, total: Number(r.total), count: r.cnt })),
       porAno: porAno.map(r => ({ ano: r.ano, total: Number(r.total), count: r.cnt })),
     });
+  } catch (err) { next(err); }
+});
+
+router.get('/', async (req, res, next) => {
+  try {
+    let sql = `SELECT p.*, e.nome as escola_nome, f.numero as fatura_numero
+      FROM pagamentos p
+      LEFT JOIN escolas e ON e.id = p.escola_id
+      LEFT JOIN faturas f ON f.id = p.fatura_id`;
+    const params = [];
+    const wheres = [];
+    if (req.query.escola_id) { wheres.push('p.escola_id=?'); params.push(req.query.escola_id); }
+    if (req.query.estado) { wheres.push('p.estado=?'); params.push(req.query.estado); }
+    if (req.query.forma_pagamento) { wheres.push('p.forma_pagamento=?'); params.push(req.query.forma_pagamento); }
+    if (wheres.length) sql += ' WHERE ' + wheres.join(' AND ');
+    sql += ' ORDER BY p.data_pagamento DESC, p.id DESC';
+    const rows = await query(sql, params);
+    res.json(Array.isArray(rows) ? rows.map(mapPagamento) : []);
+  } catch (err) {
+    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
+    next(err);
+  }
+});
+
+router.get('/:id', async (req, res, next) => {
+  try {
+    const r = await queryOne(
+      `SELECT p.*, e.nome as escola_nome, f.numero as fatura_numero
+       FROM pagamentos p
+       LEFT JOIN escolas e ON e.id=p.escola_id
+       LEFT JOIN faturas f ON f.id=p.fatura_id
+       WHERE p.id=?`,
+      [req.params.id]
+    );
+    if (!r) return res.status(404).json({ error: 'Pagamento não encontrado' });
+    res.json(mapPagamento(r));
   } catch (err) { next(err); }
 });
 

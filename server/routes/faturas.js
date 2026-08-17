@@ -13,36 +13,6 @@ function mapFatura(r) {
   };
 }
 
-router.get('/', async (req, res, next) => {
-  try {
-    let sql = `SELECT f.*, e.nome as escola_nome
-      FROM faturas f
-      LEFT JOIN escolas e ON e.id = f.escola_id`;
-    const params = [];
-    const wheres = [];
-    if (req.query.escola_id) { wheres.push('f.escola_id=?'); params.push(req.query.escola_id); }
-    if (req.query.estado) { wheres.push('f.estado=?'); params.push(req.query.estado); }
-    if (wheres.length) sql += ' WHERE ' + wheres.join(' AND ');
-    sql += ' ORDER BY f.data_emissao DESC, f.id DESC';
-    const rows = await query(sql, params);
-    res.json(rows.map(mapFatura));
-  } catch (err) {
-    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
-    next(err);
-  }
-});
-
-router.get('/:id', async (req, res, next) => {
-  try {
-    const r = await queryOne(
-      `SELECT f.*, e.nome as escola_nome FROM faturas f LEFT JOIN escolas e ON e.id=f.escola_id WHERE f.id=?`,
-      [req.params.id]
-    );
-    if (!r) return res.status(404).json({ error: 'Fatura não encontrada' });
-    res.json(mapFatura(r));
-  } catch (err) { next(err); }
-});
-
 router.get('/resumo', async (req, res, next) => {
   try {
     const total = await queryOne('SELECT COALESCE(SUM(valor_total),0) as total, COUNT(*) as cnt FROM faturas');
@@ -64,6 +34,36 @@ router.get('/resumo', async (req, res, next) => {
       porEscola: porEscola.map(r => ({ escolaId: r.escola_id, nome: r.nome || 'Sem escola', total: Number(r.total), count: r.cnt })),
       porMes: porMes.map(r => ({ mes: r.mes, total: Number(r.total), count: r.cnt })),
     });
+  } catch (err) { next(err); }
+});
+
+router.get('/', async (req, res, next) => {
+  try {
+    let sql = `SELECT f.*, e.nome as escola_nome
+      FROM faturas f
+      LEFT JOIN escolas e ON e.id = f.escola_id`;
+    const params = [];
+    const wheres = [];
+    if (req.query.escola_id) { wheres.push('f.escola_id=?'); params.push(req.query.escola_id); }
+    if (req.query.estado) { wheres.push('f.estado=?'); params.push(req.query.estado); }
+    if (wheres.length) sql += ' WHERE ' + wheres.join(' AND ');
+    sql += ' ORDER BY f.data_emissao DESC, f.id DESC';
+    const rows = await query(sql, params);
+    res.json(Array.isArray(rows) ? rows.map(mapFatura) : []);
+  } catch (err) {
+    if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
+    next(err);
+  }
+});
+
+router.get('/:id', async (req, res, next) => {
+  try {
+    const r = await queryOne(
+      `SELECT f.*, e.nome as escola_nome FROM faturas f LEFT JOIN escolas e ON e.id=f.escola_id WHERE f.id=?`,
+      [req.params.id]
+    );
+    if (!r) return res.status(404).json({ error: 'Fatura não encontrada' });
+    res.json(mapFatura(r));
   } catch (err) { next(err); }
 });
 

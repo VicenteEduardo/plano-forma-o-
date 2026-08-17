@@ -26,8 +26,8 @@ async function getDb() {
 }
 
 async function query(sql, params = []) {
-  const [rows] = await getPool().execute(sql, params);
-  return rows;
+  const [rows] = await getPool().query(sql, params);
+  return Array.isArray(rows) ? rows : [];
 }
 
 async function queryOne(sql, params = []) {
