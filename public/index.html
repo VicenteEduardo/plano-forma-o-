@@ -2355,7 +2355,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Escola / Cliente <span class="text-danger">*</span></label>
-              <select class="form-select" id="fatEscola" required></select>
+              <div class="ss-control" id="ssWrapFatEscola">
+                <input type="hidden" id="fatEscolaId">
+              </div>
             </div>
             <div class="col-md-3">
               <label class="form-label">Nº Fatura <span class="text-danger">*</span></label>
@@ -2416,7 +2418,9 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Escola / Cliente <span class="text-danger">*</span></label>
-              <select class="form-select" id="pagEscola" required></select>
+              <div class="ss-control" id="ssWrapPagEscola">
+                <input type="hidden" id="pagEscolaId">
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Fatura (opcional)</label>
@@ -6594,15 +6598,6 @@ const faturaModal = new bootstrap.Modal(document.getElementById('faturaModal'));
 const pagamentoModal = new bootstrap.Modal(document.getElementById('pagamentoModal'));
 
 function populateDirecaoSelects(){
-  const selFat = document.getElementById('fatEscola');
-  const selPag = document.getElementById('pagEscola');
-  const curFat = selFat.value, curPag = selPag.value;
-  [selFat, selPag].forEach(sel => {
-    const v = sel.value;
-    sel.innerHTML = '<option value="">Selecionar escola...</option>' +
-      ESCOLAS.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
-    if(v) sel.value = v;
-  });
   ['dirFatFiltroEscola','dirPagFiltroEscola'].forEach(id => {
     const sel = document.getElementById(id);
     const v = sel.value;
@@ -6808,6 +6803,7 @@ function limparFiltrosDirecaoPagamentos(){
 
 function openFaturaModal(id){
   populateDirecaoSelects();
+  if(!_schoolSelects['ssWrapFatEscola']) initSchoolSelect('ssWrapFatEscola','fatEscolaId',{placeholder:'Selecionar escola / cliente...'});
   editingFaturaId = id || null;
   document.getElementById('faturaForm').reset();
   document.getElementById('fatId').value = '';
@@ -6815,12 +6811,13 @@ function openFaturaModal(id){
   document.getElementById('fatDeleteBtn').classList.add('d-none');
   document.getElementById('fatSaveBtn').innerHTML = 'Guardar fatura';
   document.getElementById('faturaModalTitle').innerHTML = '<i class="bi bi-receipt me-1"></i>Nova Fatura';
+  if(_schoolSelects['ssWrapFatEscola']) _schoolSelects['ssWrapFatEscola'].__clear();
   if(id){
     const f = FATURAS.find(x => x.id === id);
     if(f){
       document.getElementById('faturaModalTitle').innerHTML = '<i class="bi bi-receipt me-1"></i>Editar Fatura';
       document.getElementById('fatId').value = f.id;
-      document.getElementById('fatEscola').value = f.escolaId || '';
+      if(_schoolSelects['ssWrapFatEscola']) _schoolSelects['ssWrapFatEscola'].__setValue(f.escolaId||null);
       document.getElementById('fatNumero').value = f.numero;
       document.getElementById('fatEstado').value = f.estado;
       document.getElementById('fatValor').value = f.valorTotal;
@@ -6839,7 +6836,7 @@ document.getElementById('fatSaveBtn').addEventListener('click', async () => {
   const btn = document.getElementById('fatSaveBtn');
   const isEdit = !!editingFaturaId;
   try {
-    const escolaId = document.getElementById('fatEscola').value;
+    const escolaId = document.getElementById('fatEscolaId').value;
     const numero = document.getElementById('fatNumero').value.trim();
     const valor = parseFloat(document.getElementById('fatValor').value);
     if(!escolaId){ showToast('Selecione a escola.','warning'); return; }
@@ -6879,6 +6876,7 @@ document.getElementById('fatDeleteBtn').addEventListener('click', async () => {
 
 function openPagamentoModal(id){
   populateDirecaoSelects();
+  if(!_schoolSelects['ssWrapPagEscola']) initSchoolSelect('ssWrapPagEscola','pagEscolaId',{placeholder:'Selecionar escola / cliente...'});
   editingPagamentoId = id || null;
   document.getElementById('pagamentoForm').reset();
   document.getElementById('pagId').value = '';
@@ -6886,6 +6884,7 @@ function openPagamentoModal(id){
   document.getElementById('pagDeleteBtn').classList.add('d-none');
   document.getElementById('pagSaveBtn').innerHTML = 'Guardar pagamento';
   document.getElementById('pagamentoModalTitle').innerHTML = '<i class="bi bi-credit-card me-1"></i>Novo Pagamento';
+  if(_schoolSelects['ssWrapPagEscola']) _schoolSelects['ssWrapPagEscola'].__clear();
   const selFatura = document.getElementById('pagFatura');
   selFatura.innerHTML = '<option value="">Sem fatura associada</option>' +
     FATURAS.filter(f => f.estado !== 'Pago' && f.estado !== 'Cancelado')
@@ -6895,7 +6894,7 @@ function openPagamentoModal(id){
     if(p){
       document.getElementById('pagamentoModalTitle').innerHTML = '<i class="bi bi-credit-card me-1"></i>Editar Pagamento';
       document.getElementById('pagId').value = p.id;
-      document.getElementById('pagEscola').value = p.escolaId || '';
+      if(_schoolSelects['ssWrapPagEscola']) _schoolSelects['ssWrapPagEscola'].__setValue(p.escolaId||null);
       document.getElementById('pagFatura').value = p.faturaId || '';
       document.getElementById('pagValor').value = p.valor;
       document.getElementById('pagData').value = p.dataPagamento;
@@ -6915,7 +6914,7 @@ document.getElementById('pagSaveBtn').addEventListener('click', async () => {
   const btn = document.getElementById('pagSaveBtn');
   const isEdit = !!editingPagamentoId;
   try {
-    const escolaId = document.getElementById('pagEscola').value;
+    const escolaId = document.getElementById('pagEscolaId').value;
     const valor = parseFloat(document.getElementById('pagValor').value);
     if(!escolaId){ showToast('Selecione a escola.','warning'); return; }
     if(!valor || valor <= 0){ showToast('Insira um valor válido.','warning'); return; }
