@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { query, queryOne } = require('../db/database');
+const { query, queryOne, getPool } = require('../db/database');
 
 function mapFatura(r) {
   return {
@@ -74,7 +74,7 @@ router.post('/', async (req, res, next) => {
     if (!b.numero) return res.status(400).json({ error: 'Número da fatura é obrigatório' });
     if (!b.valorTotal || Number(b.valorTotal) <= 0) return res.status(400).json({ error: 'Valor deve ser maior que 0' });
     const now = new Date().toISOString().slice(0, 10);
-    const [info] = await query(
+    const [info] = await getPool().query(
       `INSERT INTO faturas (escola_id, numero, descricao, valor_total, data_emissao, data_vencimento, estado, observacoes, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?,?,?,?)`,
       [b.escolaId, b.numero, b.descricao || '', b.valorTotal, b.dataEmissao || now, b.dataVencimento || '', b.estado || 'Pendente', b.observacoes || '', now, now]
     );
