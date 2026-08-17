@@ -541,6 +541,7 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         <div class="nav-pill" data-view="reunioes"><i class="bi bi-people-fill"></i> Reuniões</div>
         <div class="nav-pill" data-view="acessos"><i class="bi bi-key-fill"></i> Acessos</div>
         <div class="nav-pill" data-view="gastos"><i class="bi bi-cash-stack"></i> Gastos</div>
+        <div class="nav-pill" data-view="direcao"><i class="bi bi-bank"></i> Direção</div>
       </div>
       <div class="topnav-actions">
         <button class="btn btn-soft btn-sm" onclick="openTechModal()"><i class="bi bi-person-plus me-1"></i><span class="d-none-xs">Novo técnico</span></button>
@@ -1156,6 +1157,196 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
             </table>
           </div>
           <div class="pg-bar" id="pgGastos"></div>
+        </div>
+      </section>
+
+      <section class="section-view" id="view-direcao">
+        <div class="filter-bar">
+          <span class="ms-auto"></span>
+          <button class="btn btn-brand btn-sm" onclick="openFaturaModal()"><i class="bi bi-receipt me-1"></i>Nova Fatura</button>
+          <button class="btn btn-outline-success btn-sm" onclick="openPagamentoModal()"><i class="bi bi-credit-card me-1"></i>Novo Pagamento</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="pdfDirecao()"><i class="bi bi-file-earmark-pdf me-1"></i>Relatório PDF</button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E8F5E9;color:#2E7D32;"><i class="bi bi-cash-coin"></i></div>
+              <div><div class="kpi-value" id="dirKpiTotalPago">0</div><div class="kpi-label">Total Recebido</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#FFF3E0;color:#E65100;"><i class="bi bi-hourglass-split"></i></div>
+              <div><div class="kpi-value" id="dirKpiPendente">0</div><div class="kpi-label">Faturas Pendentes</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:var(--brand-50);color:var(--brand-600);"><i class="bi bi-receipt"></i></div>
+              <div><div class="kpi-value" id="dirKpiFatCount">0</div><div class="kpi-label">Nº Faturas</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E3F2FD;color:#1565C0;"><i class="bi bi-credit-card"></i></div>
+              <div><div class="kpi-value" id="dirKpiPagCount">0</div><div class="kpi-label">Nº Pagamentos</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#F3E5F5;color:#7B1FA2;"><i class="bi bi-receipt-cutoff"></i></div>
+              <div><div class="kpi-value" id="dirKpiFatTotal">0</div><div class="kpi-label">Total Faturas</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#E0F7FA;color:#00695C;"><i class="bi bi-check-circle"></i></div>
+              <div><div class="kpi-value" id="dirKpiFatPagas">0</div><div class="kpi-label">Faturas Pagas</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#FFF8E1;color:#F57F17;"><i class="bi bi-exclamation-triangle"></i></div>
+              <div><div class="kpi-value" id="dirKpiFatAtraso">0</div><div class="kpi-label">Faturas em Atraso</div></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="panel kpi-card">
+              <div class="kpi-icon" style="background:#FCE4EC;color:#C62828;"><i class="bi bi-arrow-repeat"></i></div>
+              <div><div class="kpi-value" id="dirKpiPagPendentes">0</div><div class="kpi-label">Pagamentos Pendentes</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRÁFICOS -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-building me-1 text-primary"></i>Pagamentos por Escola</div>
+              <div id="dirChartEscola"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-calendar3 me-1 text-success"></i>Receitas Mensais</div>
+              <div id="dirChartMensal"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-credit-card me-1 text-warning"></i>Por Forma de Pagamento</div>
+              <div id="dirChartForma"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-pie-chart me-1 text-danger"></i>Por Método de Pagamento</div>
+              <div id="dirChartMetodo"></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="panel" style="padding:18px 20px;">
+              <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-graph-up me-1 text-info"></i>Top Escolas — Receita Total</div>
+              <div id="dirChartTopEscola"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FATURAS -->
+        <div class="panel p-0 mb-3">
+          <div class="panel-header d-flex align-items-center justify-content-between" style="padding:14px 18px; cursor:pointer;" onclick="document.getElementById('dirFaturasBody').classList.toggle('d-none'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-up');">
+            <div class="fw-bold" style="font-size:13.5px;"><i class="bi bi-receipt me-2 text-primary"></i>Faturas <span class="chip chip-muted ms-2" id="dirFatCount" style="font-size:10px;">0</span></div>
+            <i class="bi bi-chevron-up" style="font-size:12px; color:var(--ink-500);"></i>
+          </div>
+          <div id="dirFaturasBody" style="border-top:1px solid var(--line);">
+            <div class="p-3">
+              <div class="d-flex gap-2 mb-3 flex-wrap">
+                <input type="text" class="form-control form-control-sm" id="dirFatSearch" placeholder="Pesquisar fatura..." oninput="renderDirecaoFaturas()" style="max-width:200px;">
+                <select class="form-select form-select-sm" id="dirFatFiltroEscola" style="max-width:170px;"><option value="todos">Todas as escolas</option></select>
+                <select class="form-select form-select-sm" id="dirFatFiltroEstado" onchange="renderDirecaoFaturas()" style="max-width:140px;">
+                  <option value="todos">Todos os estados</option>
+                  <option>Pendente</option><option>Pago</option><option>Parcial</option><option>Cancelado</option>
+                </select>
+                <input type="date" class="form-control form-control-sm" id="dirFatFiltroDe" title="Data de" style="max-width:150px;">
+                <input type="date" class="form-control form-control-sm" id="dirFatFiltroAte" title="Data até" style="max-width:150px;">
+                <button class="btn btn-outline-secondary btn-sm" onclick="limparFiltrosDirecaoFaturas()" title="Limpar"><i class="bi bi-x-lg"></i></button>
+                <span class="ms-auto"></span>
+                <button class="btn btn-brand btn-sm" onclick="openFaturaModal()"><i class="bi bi-plus-lg me-1"></i>Nova Fatura</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-modern mb-0" style="font-size:13px;">
+                  <thead>
+                    <tr>
+                      <th>Nº</th>
+                      <th>Escola</th>
+                      <th>Descrição</th>
+                      <th>Emissão</th>
+                      <th>Vencimento</th>
+                      <th class="text-end">Valor (Kz)</th>
+                      <th>Estado</th>
+                      <th class="text-end">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaDirecaoFaturasBody"></tbody>
+                </table>
+              </div>
+              <div class="pg-bar" id="pgDirecaoFaturas"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGAMENTOS -->
+        <div class="panel p-0">
+          <div class="panel-header d-flex align-items-center justify-content-between" style="padding:14px 18px; cursor:pointer;" onclick="document.getElementById('dirPagamentosBody').classList.toggle('d-none'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('i.bi-chevron-down, i.bi-chevron-up').classList.toggle('bi-chevron-up');">
+            <div class="fw-bold" style="font-size:13.5px;"><i class="bi bi-credit-card me-2 text-success"></i>Pagamentos <span class="chip chip-muted ms-2" id="dirPagCount" style="font-size:10px;">0</span></div>
+            <i class="bi bi-chevron-up" style="font-size:12px; color:var(--ink-500);"></i>
+          </div>
+          <div id="dirPagamentosBody" style="border-top:1px solid var(--line);">
+            <div class="p-3">
+              <div class="d-flex gap-2 mb-3 flex-wrap">
+                <input type="text" class="form-control form-control-sm" id="dirPagSearch" placeholder="Pesquisar pagamento..." oninput="renderDirecaoPagamentos()" style="max-width:200px;">
+                <select class="form-select form-select-sm" id="dirPagFiltroEscola" style="max-width:170px;"><option value="todos">Todas as escolas</option></select>
+                <select class="form-select form-select-sm" id="dirPagFiltroForma" onchange="renderDirecaoPagamentos()" style="max-width:140px;">
+                  <option value="todos">Todas as formas</option>
+                  <option>Mensal</option><option>Trimestral</option><option>Semestral</option><option>Anual</option>
+                </select>
+                <select class="form-select form-select-sm" id="dirPagFiltroEstado" onchange="renderDirecaoPagamentos()" style="max-width:140px;">
+                  <option value="todos">Todos os estados</option>
+                  <option>Confirmado</option><option>Pendente</option><option>Cancelado</option>
+                </select>
+                <input type="date" class="form-control form-control-sm" id="dirPagFiltroDe" title="Data de" style="max-width:150px;">
+                <input type="date" class="form-control form-control-sm" id="dirPagFiltroAte" title="Data até" style="max-width:150px;">
+                <button class="btn btn-outline-secondary btn-sm" onclick="limparFiltrosDirecaoPagamentos()" title="Limpar"><i class="bi bi-x-lg"></i></button>
+                <span class="ms-auto"></span>
+                <button class="btn btn-outline-success btn-sm" onclick="openPagamentoModal()"><i class="bi bi-plus-lg me-1"></i>Novo Pagamento</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-modern mb-0" style="font-size:13px;">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Escola</th>
+                      <th>Fatura</th>
+                      <th>Frequência</th>
+                      <th>Método</th>
+                      <th>Referência</th>
+                      <th class="text-end">Valor (Kz)</th>
+                      <th>Estado</th>
+                      <th class="text-end">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaDirecaoPagamentosBody"></tbody>
+                </table>
+              </div>
+              <div class="pg-bar" id="pgDirecaoPagamentos"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -2147,6 +2338,138 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
   </div>
 </div>
 
+<!-- ============ MODAL: FATURA ============ -->
+<div class="modal fade" id="faturaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold mb-0" id="faturaModalTitle"><i class="bi bi-receipt me-1"></i>Nova Fatura</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Registar fatura para escola/cliente</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="faturaForm">
+          <input type="hidden" id="fatId">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Escola / Cliente <span class="text-danger">*</span></label>
+              <select class="form-select" id="fatEscola" required></select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nº Fatura <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="fatNumero" required placeholder="Ex: FAT-2026-001">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="fatEstado">
+                <option>Pendente</option><option>Pago</option><option>Parcial</option><option>Cancelado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Valor Total (Kz) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="fatValor" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Data de Emissão</label>
+              <input type="date" class="form-control" id="fatDataEmissao">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Data de Vencimento</label>
+              <input type="date" class="form-control" id="fatDataVencimento">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descrição</label>
+              <input type="text" class="form-control" id="fatDescricao" placeholder="Descrição da fatura...">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" id="fatObservacoes" rows="2" placeholder="Notas adicionais..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-danger me-auto d-none" id="fatDeleteBtn"><i class="bi bi-trash me-1"></i>Remover</button>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-brand" id="fatSaveBtn">Guardar fatura</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: PAGAMENTO ============ -->
+<div class="modal fade" id="pagamentoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold mb-0" id="pagamentoModalTitle"><i class="bi bi-credit-card me-1"></i>Novo Pagamento</h5>
+          <div style="font-size:12px; color:var(--ink-500);">Registar pagamento recebido de escola/cliente</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="pagamentoForm">
+          <input type="hidden" id="pagId">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Escola / Cliente <span class="text-danger">*</span></label>
+              <select class="form-select" id="pagEscola" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fatura (opcional)</label>
+              <select class="form-select" id="pagFatura">
+                <option value="">Sem fatura associada</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Valor (Kz) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="pagValor" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Data do Pagamento</label>
+              <input type="date" class="form-control" id="pagData">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="pagEstado">
+                <option>Confirmado</option><option>Pendente</option><option>Cancelado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Frequência <span class="text-danger">*</span></label>
+              <select class="form-select" id="pagForma" required>
+                <option>Mensal</option><option>Trimestral</option><option>Semestral</option><option>Anual</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Método de Pagamento</label>
+              <select class="form-select" id="pagMetodo">
+                <option>Transferência</option><option>Dinheiro</option><option>Cheque</option><option>M-Pesa</option><option>Multicaixa Express</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Referência</label>
+              <input type="text" class="form-control" id="pagReferencia" placeholder="Nº da transferência...">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" id="pagObservacoes" rows="2" placeholder="Notas adicionais..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-danger me-auto d-none" id="pagDeleteBtn"><i class="bi bi-trash me-1"></i>Remover</button>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-brand" id="pagSaveBtn">Guardar pagamento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
@@ -2783,6 +3106,7 @@ const pageMeta = {
   reunioes:{title:'Reuniões Estratégicas', sub:'Reuniões entre escolas, direção e equipa Eduall'},
   acessos:{title:'Acessos às Escolas', sub:'Credenciais de acesso por escola — vários acessos por escola'},
   gastos:{title:'Gastos de Logística', sub:'Gestão de despesas operacionais e saldos dos técnicos'},
+  direcao:{title:'Direção — Faturas & Pagamentos', sub:'Gestão de faturas, pagamentos e relatórios por escola'},
 };
 document.querySelectorAll('.nav-pill').forEach(el=>{
   el.addEventListener('click', ()=>{
@@ -2796,6 +3120,11 @@ document.querySelectorAll('.nav-pill').forEach(el=>{
       const pwd = prompt('Digite a senha para aceder aos Acessos:');
       if(pwd !== 'tecnicos@2026'){ showToast('Senha incorreta.', 'error'); return; }
       window._acessosUnlocked = true;
+    }
+    if(view==='direcao' && !window._direcaoUnlocked){
+      const pwd = prompt('Digite a senha para aceder à Direção:');
+      if(pwd !== 'Direcao@2026'){ showToast('Senha incorreta.', 'error'); return; }
+      window._direcaoUnlocked = true;
     }
     document.querySelectorAll('.nav-pill').forEach(n=>n.classList.remove('active'));
     el.classList.add('active');
@@ -2815,6 +3144,7 @@ document.querySelectorAll('.nav-pill').forEach(el=>{
       if(view==='reunioes') renderReunioes();
       if(view==='acessos') renderAcessos();
       if(view==='gastos') renderGastos();
+      if(view==='direcao') renderDirecao();
     }catch(e){ console.error('Nav render error:', e); }
   });
 });
@@ -6254,6 +6584,438 @@ function renderAusCalendar(){
 }
 
 /* =========================================================================
+   DIREÇÃO — Faturas & Pagamentos
+========================================================================= */
+let FATURAS = [], PAGAMENTOS = [];
+let dirFatSortKey = 'data_emissao', dirFatSortDir = -1;
+let dirPagSortKey = 'data_pagamento', dirPagSortDir = -1;
+let editingFaturaId = null, editingPagamentoId = null;
+const faturaModal = new bootstrap.Modal(document.getElementById('faturaModal'));
+const pagamentoModal = new bootstrap.Modal(document.getElementById('pagamentoModal'));
+
+function populateDirecaoSelects(){
+  const selFat = document.getElementById('fatEscola');
+  const selPag = document.getElementById('pagEscola');
+  const curFat = selFat.value, curPag = selPag.value;
+  [selFat, selPag].forEach(sel => {
+    const v = sel.value;
+    sel.innerHTML = '<option value="">Selecionar escola...</option>' +
+      ESCOLAS.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+    if(v) sel.value = v;
+  });
+  ['dirFatFiltroEscola','dirPagFiltroEscola'].forEach(id => {
+    const sel = document.getElementById(id);
+    const v = sel.value;
+    sel.innerHTML = '<option value="todos">Todas as escolas</option>' +
+      ESCOLAS.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+    if(v) sel.value = v;
+  });
+}
+
+async function loadDirecaoData(){
+  try {
+    const [fats, pags] = await Promise.all([apiGet('/faturas'), apiGet('/pagamentos')]);
+    FATURAS = fats; PAGAMENTOS = pags;
+  } catch(e) { console.error('Erro ao carregar dados Direção:', e); }
+}
+
+function getFaturasFiltradas(){
+  let list = [...FATURAS];
+  const search = (document.getElementById('dirFatSearch')?.value || '').toLowerCase();
+  const escola = document.getElementById('dirFatFiltroEscola')?.value || 'todos';
+  const estado = document.getElementById('dirFatFiltroEstado')?.value || 'todos';
+  const de = document.getElementById('dirFatFiltroDe')?.value || '';
+  const ate = document.getElementById('dirFatFiltroAte')?.value || '';
+  if(search) list = list.filter(f => (f.numero+' '+f.escolaNome+' '+f.descricao).toLowerCase().includes(search));
+  if(escola !== 'todos') list = list.filter(f => String(f.escolaId) === escola);
+  if(estado !== 'todos') list = list.filter(f => f.estado === estado);
+  if(de) list = list.filter(f => f.dataEmissao >= de);
+  if(ate) list = list.filter(f => f.dataEmissao <= ate);
+  return list;
+}
+
+function getPagamentosFiltrados(){
+  let list = [...PAGAMENTOS];
+  const search = (document.getElementById('dirPagSearch')?.value || '').toLowerCase();
+  const escola = document.getElementById('dirPagFiltroEscola')?.value || 'todos';
+  const forma = document.getElementById('dirPagFiltroForma')?.value || 'todos';
+  const estado = document.getElementById('dirPagFiltroEstado')?.value || 'todos';
+  const de = document.getElementById('dirPagFiltroDe')?.value || '';
+  const ate = document.getElementById('dirPagFiltroAte')?.value || '';
+  if(search) list = list.filter(p => (p.escolaNome+' '+p.referencia+' '+p.faturaNumero).toLowerCase().includes(search));
+  if(escola !== 'todos') list = list.filter(p => String(p.escolaId) === escola);
+  if(forma !== 'todos') list = list.filter(p => p.formaPagamento === forma);
+  if(estado !== 'todos') list = list.filter(p => p.estado === estado);
+  if(de) list = list.filter(p => p.dataPagamento >= de);
+  if(ate) list = list.filter(p => p.dataPagamento <= ate);
+  return list;
+}
+
+async function renderDirecao(){
+  populateDirecaoSelects();
+  await loadDirecaoData();
+  renderDirecaoDashboard();
+  renderDirecaoFaturas();
+  renderDirecaoPagamentos();
+}
+
+function renderDirecaoDashboard(){
+  const confirmados = PAGAMENTOS.filter(p => p.estado === 'Confirmado');
+  const totalPago = confirmados.reduce((s,p) => s + p.valor, 0);
+  const fatPendentes = FATURAS.filter(f => f.estado === 'Pendente');
+  const fatPagas = FATURAS.filter(f => f.estado === 'Pago');
+  const today = iso(new Date());
+  const fatAtraso = FATURAS.filter(f => f.estado === 'Pendente' && f.dataVencimento && f.dataVencimento < today);
+  const pagPendentes = PAGAMENTOS.filter(p => p.estado === 'Pendente');
+
+  document.getElementById('dirKpiTotalPago').textContent = fmtNum(totalPago) + ' Kz';
+  document.getElementById('dirKpiPendente').textContent = fmtNum(fatPendentes.reduce((s,f) => s + f.valorTotal, 0)) + ' Kz';
+  document.getElementById('dirKpiFatCount').textContent = FATURAS.length;
+  document.getElementById('dirKpiPagCount').textContent = confirmados.length;
+  document.getElementById('dirKpiFatTotal').textContent = fmtNum(FATURAS.reduce((s,f) => s + f.valorTotal, 0)) + ' Kz';
+  document.getElementById('dirKpiFatPagas').textContent = fatPagas.length;
+  document.getElementById('dirKpiFatAtraso').textContent = fatAtraso.length;
+  document.getElementById('dirKpiPagPendentes').textContent = pagPendentes.length;
+
+  const porEscola = {};
+  confirmados.forEach(p => { porEscola[p.escolaNome||'Sem escola'] = (porEscola[p.escolaNome||'Sem escola']||0) + p.valor; });
+  const escArr = Object.entries(porEscola).sort((a,b) => b[1]-a[1]);
+  const maxEsc = escArr.length ? escArr[0][1] : 1;
+  document.getElementById('dirChartEscola').innerHTML = escArr.length ? escArr.map(([nome,val]) => {
+    const pct = (val/maxEsc*100).toFixed(0);
+    return `<div class="d-flex align-items-center gap-2 mb-2"><div style="width:120px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nome}">${nome}</div><div style="flex:1;height:20px;background:var(--paper);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--brand-600);border-radius:4px;transition:width .4s;"></div></div><div style="width:90px;font-size:11px;text-align:right;font-weight:600;">${fmtNum(val)} Kz</div></div>`;
+  }).join('') : '<div class="text-center text-muted py-3" style="font-size:12px;">Sem dados</div>';
+
+  const porForma = {};
+  confirmados.forEach(p => { porForma[p.formaPagamento] = (porForma[p.formaPagamento]||0) + p.valor; });
+  const formaArr = Object.entries(porForma).sort((a,b) => b[1]-a[1]);
+  const maxForma = formaArr.length ? formaArr[0][1] : 1;
+  const formaColors = {'Mensal':'#5850EC','Trimestral':'#12A972','Semestral':'#E08A2E','Anual':'#DD4B5B'};
+  document.getElementById('dirChartForma').innerHTML = formaArr.length ? formaArr.map(([forma,val]) => {
+    const pct = (val/maxForma*100).toFixed(0);
+    const color = formaColors[forma] || '#6B7093';
+    return `<div class="d-flex align-items-center gap-2 mb-2"><div style="width:80px;font-size:12px;font-weight:600;">${forma}</div><div style="flex:1;height:20px;background:var(--paper);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .4s;"></div></div><div style="width:90px;font-size:11px;text-align:right;font-weight:600;">${fmtNum(val)} Kz</div></div>`;
+  }).join('') : '<div class="text-center text-muted py-3" style="font-size:12px;">Sem dados</div>';
+
+  const porMes = {};
+  confirmados.forEach(p => { const m = p.dataPagamento.substring(0,7); porMes[m] = (porMes[m]||0) + p.valor; });
+  const mesArr = Object.entries(porMes).sort((a,b) => a[0].localeCompare(b[0])).slice(-12);
+  const maxMes = mesArr.length ? Math.max(...mesArr.map(m => m[1])) : 1;
+  document.getElementById('dirChartMensal').innerHTML = mesArr.length ? `<div style="display:flex;align-items:flex-end;gap:4px;height:120px;">` +
+    mesArr.map(([mes,val]) => {
+      const h = Math.max(4, (val/maxMes)*100);
+      const d = mes.split('-');
+      const label = d[1]+'/'+d[0].substring(2);
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="font-size:9px;color:var(--ink-500);">${fmtNum(val/1000)}k</div><div title="${mes}: ${fmtNum(val)} Kz" style="width:100%;max-width:40px;height:${h}%;background:var(--brand-600);border-radius:3px 3px 0 0;transition:height .4s;cursor:pointer;"></div><div style="font-size:9px;color:var(--ink-500);">${label}</div></div>`;
+    }).join('') + '</div>' : '<div class="text-center text-muted py-3" style="font-size:12px;">Sem dados</div>';
+
+  const porMetodo = {};
+  confirmados.forEach(p => { porMetodo[p.metodoPagamento] = (porMetodo[p.metodoPagamento]||0) + p.valor; });
+  const metArr = Object.entries(porMetodo).sort((a,b) => b[1]-a[1]);
+  const totalMet = metArr.reduce((s,m) => s+m[1], 0);
+  const metColors = ['#5850EC','#12A972','#E08A2E','#DD4B5B','#2E9BE0','#9B5DE5'];
+  document.getElementById('dirChartMetodo').innerHTML = metArr.length ? metArr.map(([met,val], i) => {
+    const pct = totalMet ? (val/totalMet*100).toFixed(1) : 0;
+    const color = metColors[i % metColors.length];
+    return `<div class="d-flex align-items-center gap-2 mb-2"><div style="width:12px;height:12px;border-radius:3px;background:${color};flex-shrink:0;"></div><div style="width:110px;font-size:12px;">${met}</div><div style="flex:1;height:18px;background:var(--paper);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;"></div></div><div style="width:80px;font-size:11px;text-align:right;font-weight:600;">${pct}%</div></div>`;
+  }).join('') : '<div class="text-center text-muted py-3" style="font-size:12px;">Sem dados</div>';
+
+  const topEsc = {};
+  FATURAS.forEach(f => { topEsc[f.escolaNome||'Sem escola'] = (topEsc[f.escolaNome||'Sem escola']||0) + f.valorTotal; });
+  const topEscArr = Object.entries(topEsc).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxTopEsc = topEscArr.length ? topEscArr[0][1] : 1;
+  const escColors = ['#5850EC','#12A972','#E08A2E','#DD4B5B','#2E9BE0','#9B5DE5','#0EA5A5','#C2410C'];
+  document.getElementById('dirChartTopEscola').innerHTML = topEscArr.length ? topEscArr.map(([nome,val], i) => {
+    const pct = (val/maxTopEsc*100).toFixed(0);
+    return `<div class="d-flex align-items-center gap-2 mb-2"><div style="width:12px;height:12px;border-radius:3px;background:${escColors[i%escColors.length]};flex-shrink:0;"></div><div style="width:100px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nome}">${nome}</div><div style="flex:1;height:18px;background:var(--paper);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${escColors[i%escColors.length]};border-radius:4px;"></div></div><div style="width:90px;font-size:11px;text-align:right;font-weight:600;">${fmtNum(val)} Kz</div></div>`;
+  }).join('') : '<div class="text-center text-muted py-3" style="font-size:12px;">Sem dados</div>';
+}
+
+function renderDirecaoFaturas(){
+  const list = getFaturasFiltradas();
+  document.getElementById('dirFatCount').textContent = list.length + ' faturas';
+  const pgMeta = paginateSlice(list, 'dirFat', 10);
+  renderPaginationBar('pgDirecaoFaturas','dirFat', pgMeta, renderDirecaoFaturas);
+  const page = pgMeta.slice;
+  const tbody = document.getElementById('tabelaDirecaoFaturasBody');
+  if(!page.length){
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted"><i class="bi bi-receipt" style="font-size:28px;"></i><div class="mt-2">Nenhuma fatura registada</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map(f => {
+    const esc = escolaById(f.escolaId);
+    const estadoClass = {'Pago':'chip-success','Pendente':'chip-warning','Parcial':'chip-info','Cancelado':'chip-muted'}[f.estado]||'chip-muted';
+    return `<tr style="cursor:pointer;" onclick="openFaturaModal(${f.id})">
+      <td style="font-size:12.5px;font-weight:600;">${f.numero}</td>
+      <td><div class="d-flex align-items-center gap-2">${esc ? `<img src="${escolaLogo(esc)}" style="width:22px;height:22px;border-radius:4px;object-fit:cover;" onerror="escolaImgOnError(this,${JSON.stringify(esc).replace(/"/g,'&quot;')})">` : ''}<span style="font-size:12.5px;">${f.escolaNome||'-'}</span></div></td>
+      <td style="font-size:12px;color:var(--ink-500);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.descricao||'-'}</td>
+      <td style="font-size:12.5px;">${fmtDatePt(f.dataEmissao)}</td>
+      <td style="font-size:12.5px;">${f.dataVencimento ? fmtDatePt(f.dataVencimento) : '-'}</td>
+      <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(f.valorTotal)} Kz</td>
+      <td><span class="chip ${estadoClass}" style="font-size:10px;">${f.estado}</span></td>
+      <td class="text-end"><button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openFaturaModal(${f.id})"><i class="bi bi-pencil"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDirecaoPagamentos(){
+  const list = getPagamentosFiltrados();
+  document.getElementById('dirPagCount').textContent = list.length + ' pagamentos';
+  const pgMeta = paginateSlice(list, 'dirPag', 10);
+  renderPaginationBar('pgDirecaoPagamentos','dirPag', pgMeta, renderDirecaoPagamentos);
+  const page = pgMeta.slice;
+  const tbody = document.getElementById('tabelaDirecaoPagamentosBody');
+  if(!page.length){
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted"><i class="bi bi-credit-card" style="font-size:28px;"></i><div class="mt-2">Nenhum pagamento registado</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map(p => {
+    const esc = escolaById(p.escolaId);
+    const estadoClass = {'Confirmado':'chip-success','Pendente':'chip-warning','Cancelado':'chip-muted'}[p.estado]||'chip-muted';
+    const formaColor = {'Mensal':'chip-info','Trimestral':'chip-success','Semestral':'chip-warning','Anual':'chip-purple'}[p.formaPagamento]||'chip-muted';
+    return `<tr style="cursor:pointer;" onclick="openPagamentoModal(${p.id})">
+      <td style="font-size:12.5px;">${fmtDatePt(p.dataPagamento)}</td>
+      <td><div class="d-flex align-items-center gap-2">${esc ? `<img src="${escolaLogo(esc)}" style="width:22px;height:22px;border-radius:4px;object-fit:cover;" onerror="escolaImgOnError(this,${JSON.stringify(esc).replace(/"/g,'&quot;')})">` : ''}<span style="font-size:12.5px;">${p.escolaNome||'-'}</span></div></td>
+      <td style="font-size:12px;">${p.faturaNumero || '<span class="text-muted">—</span>'}</td>
+      <td><span class="chip ${formaColor}" style="font-size:10px;">${p.formaPagamento}</span></td>
+      <td style="font-size:12px;">${p.metodoPagamento}</td>
+      <td style="font-size:11px;color:var(--ink-500);">${p.referencia||'-'}</td>
+      <td class="text-end fw-bold" style="font-size:13px;">${fmtNum(p.valor)} Kz</td>
+      <td><span class="chip ${estadoClass}" style="font-size:10px;">${p.estado}</span></td>
+      <td class="text-end"><button class="btn btn-sm btn-light border" onclick="event.stopPropagation(); openPagamentoModal(${p.id})"><i class="bi bi-pencil"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function limparFiltrosDirecaoFaturas(){
+  document.getElementById('dirFatSearch').value = '';
+  document.getElementById('dirFatFiltroEscola').value = 'todos';
+  document.getElementById('dirFatFiltroEstado').value = 'todos';
+  document.getElementById('dirFatFiltroDe').value = '';
+  document.getElementById('dirFatFiltroAte').value = '';
+  renderDirecaoFaturas();
+}
+
+function limparFiltrosDirecaoPagamentos(){
+  document.getElementById('dirPagSearch').value = '';
+  document.getElementById('dirPagFiltroEscola').value = 'todos';
+  document.getElementById('dirPagFiltroForma').value = 'todos';
+  document.getElementById('dirPagFiltroEstado').value = 'todos';
+  document.getElementById('dirPagFiltroDe').value = '';
+  document.getElementById('dirPagFiltroAte').value = '';
+  renderDirecaoPagamentos();
+}
+
+function openFaturaModal(id){
+  populateDirecaoSelects();
+  editingFaturaId = id || null;
+  document.getElementById('faturaForm').reset();
+  document.getElementById('fatId').value = '';
+  document.getElementById('fatDataEmissao').value = iso(new Date());
+  document.getElementById('fatDeleteBtn').classList.add('d-none');
+  document.getElementById('fatSaveBtn').innerHTML = 'Guardar fatura';
+  document.getElementById('faturaModalTitle').innerHTML = '<i class="bi bi-receipt me-1"></i>Nova Fatura';
+  if(id){
+    const f = FATURAS.find(x => x.id === id);
+    if(f){
+      document.getElementById('faturaModalTitle').innerHTML = '<i class="bi bi-receipt me-1"></i>Editar Fatura';
+      document.getElementById('fatId').value = f.id;
+      document.getElementById('fatEscola').value = f.escolaId || '';
+      document.getElementById('fatNumero').value = f.numero;
+      document.getElementById('fatEstado').value = f.estado;
+      document.getElementById('fatValor').value = f.valorTotal;
+      document.getElementById('fatDataEmissao').value = f.dataEmissao;
+      document.getElementById('fatDataVencimento').value = f.dataVencimento || '';
+      document.getElementById('fatDescricao').value = f.descricao || '';
+      document.getElementById('fatObservacoes').value = f.observacoes || '';
+      document.getElementById('fatDeleteBtn').classList.remove('d-none');
+      document.getElementById('fatSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar fatura';
+    }
+  }
+  faturaModal.show();
+}
+
+document.getElementById('fatSaveBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('fatSaveBtn');
+  const isEdit = !!editingFaturaId;
+  try {
+    const escolaId = document.getElementById('fatEscola').value;
+    const numero = document.getElementById('fatNumero').value.trim();
+    const valor = parseFloat(document.getElementById('fatValor').value);
+    if(!escolaId){ showToast('Selecione a escola.','warning'); return; }
+    if(!numero){ showToast('Insira o número da fatura.','warning'); return; }
+    if(!valor || valor <= 0){ showToast('Insira um valor válido.','warning'); return; }
+    const data = {
+      escolaId: Number(escolaId), numero,
+      descricao: document.getElementById('fatDescricao').value,
+      valorTotal: valor,
+      dataEmissao: document.getElementById('fatDataEmissao').value || iso(new Date()),
+      dataVencimento: document.getElementById('fatDataVencimento').value || '',
+      estado: document.getElementById('fatEstado').value,
+      observacoes: document.getElementById('fatObservacoes').value,
+    };
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
+    if(isEdit) await apiPut('/faturas/' + editingFaturaId, data);
+    else await apiPost('/faturas', data);
+    faturaModal.hide();
+    await loadDirecaoData();
+    renderDirecao();
+    showToast(isEdit ? 'Fatura atualizada com sucesso.' : 'Fatura criada com sucesso.', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = isEdit ? '<i class="bi bi-check-lg me-1"></i>Atualizar fatura' : 'Guardar fatura'; }
+});
+
+document.getElementById('fatDeleteBtn').addEventListener('click', async () => {
+  if(!editingFaturaId) return;
+  if(!confirm('Tem certeza que deseja remover esta fatura? Os pagamentos associados serão desvinculados.')) return;
+  try {
+    await apiDelete('/faturas/' + editingFaturaId);
+    faturaModal.hide();
+    await loadDirecaoData();
+    renderDirecao();
+    showToast('Fatura removida com sucesso.', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+});
+
+function openPagamentoModal(id){
+  populateDirecaoSelects();
+  editingPagamentoId = id || null;
+  document.getElementById('pagamentoForm').reset();
+  document.getElementById('pagId').value = '';
+  document.getElementById('pagData').value = iso(new Date());
+  document.getElementById('pagDeleteBtn').classList.add('d-none');
+  document.getElementById('pagSaveBtn').innerHTML = 'Guardar pagamento';
+  document.getElementById('pagamentoModalTitle').innerHTML = '<i class="bi bi-credit-card me-1"></i>Novo Pagamento';
+  const selFatura = document.getElementById('pagFatura');
+  selFatura.innerHTML = '<option value="">Sem fatura associada</option>' +
+    FATURAS.filter(f => f.estado !== 'Pago' && f.estado !== 'Cancelado')
+      .map(f => `<option value="${f.id}">${f.numero} — ${f.escolaNome} (${fmtNum(f.valorTotal)} Kz)</option>`).join('');
+  if(id){
+    const p = PAGAMENTOS.find(x => x.id === id);
+    if(p){
+      document.getElementById('pagamentoModalTitle').innerHTML = '<i class="bi bi-credit-card me-1"></i>Editar Pagamento';
+      document.getElementById('pagId').value = p.id;
+      document.getElementById('pagEscola').value = p.escolaId || '';
+      document.getElementById('pagFatura').value = p.faturaId || '';
+      document.getElementById('pagValor').value = p.valor;
+      document.getElementById('pagData').value = p.dataPagamento;
+      document.getElementById('pagEstado').value = p.estado;
+      document.getElementById('pagForma').value = p.formaPagamento;
+      document.getElementById('pagMetodo').value = p.metodoPagamento;
+      document.getElementById('pagReferencia').value = p.referencia || '';
+      document.getElementById('pagObservacoes').value = p.observacoes || '';
+      document.getElementById('pagDeleteBtn').classList.remove('d-none');
+      document.getElementById('pagSaveBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Atualizar pagamento';
+    }
+  }
+  pagamentoModal.show();
+}
+
+document.getElementById('pagSaveBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('pagSaveBtn');
+  const isEdit = !!editingPagamentoId;
+  try {
+    const escolaId = document.getElementById('pagEscola').value;
+    const valor = parseFloat(document.getElementById('pagValor').value);
+    if(!escolaId){ showToast('Selecione a escola.','warning'); return; }
+    if(!valor || valor <= 0){ showToast('Insira um valor válido.','warning'); return; }
+    const data = {
+      escolaId: Number(escolaId),
+      faturaId: document.getElementById('pagFatura').value ? Number(document.getElementById('pagFatura').value) : null,
+      valor,
+      dataPagamento: document.getElementById('pagData').value || iso(new Date()),
+      estado: document.getElementById('pagEstado').value,
+      formaPagamento: document.getElementById('pagForma').value,
+      metodoPagamento: document.getElementById('pagMetodo').value,
+      referencia: document.getElementById('pagReferencia').value,
+      observacoes: document.getElementById('pagObservacoes').value,
+    };
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...';
+    if(isEdit) await apiPut('/pagamentos/' + editingPagamentoId, data);
+    else await apiPost('/pagamentos', data);
+    pagamentoModal.hide();
+    await loadDirecaoData();
+    renderDirecao();
+    showToast(isEdit ? 'Pagamento atualizado com sucesso.' : 'Pagamento registado com sucesso.', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = isEdit ? '<i class="bi bi-check-lg me-1"></i>Atualizar pagamento' : 'Guardar pagamento'; }
+});
+
+document.getElementById('pagDeleteBtn').addEventListener('click', async () => {
+  if(!editingPagamentoId) return;
+  if(!confirm('Tem certeza que deseja remover este pagamento?')) return;
+  try {
+    await apiDelete('/pagamentos/' + editingPagamentoId);
+    pagamentoModal.hide();
+    await loadDirecaoData();
+    renderDirecao();
+    showToast('Pagamento removido com sucesso.', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+});
+
+function pdfDirecao(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','mm','a4');
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), MR = 14;
+  const fats = getFaturasFiltradas();
+  const pags = getPagamentosFiltrados();
+  const totalFat = fats.reduce((s,f) => s + f.valorTotal, 0);
+  const totalPag = pags.filter(p => p.estado === 'Confirmado').reduce((s,p) => s + p.valor, 0);
+
+  doc.setFillColor(255,255,255); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(88,80,236); doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text('Direção — Relatório de Faturas & Pagamentos', MR, 12);
+  doc.setFontSize(8); doc.text('Gerado em: ' + fmtDatePt(iso(new Date())), MR, 19);
+  doc.setFontSize(9); doc.text('Total Faturas: ' + fmtNum(totalFat) + ' Kz  |  Total Recebido: ' + fmtNum(totalPag) + ' Kz  |  Faturas: ' + fats.length + '  |  Pagamentos: ' + pags.length, W-MR, 19, {align:'right'});
+
+  let y = 34;
+  const porEscola = {};
+  pags.filter(p => p.estado === 'Confirmado').forEach(p => { porEscola[p.escolaNome||'Sem escola'] = (porEscola[p.escolaNome||'Sem escola']||0) + p.valor; });
+  const escArr = Object.entries(porEscola).sort((a,b) => b[1]-a[1]);
+  if(escArr.length){
+    doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Pagamentos por Escola', MR, y); y += 6;
+    doc.autoTable({
+      startY:y, head:[['Escola','Total Recebido','%']], body:escArr.map(([nome,val]) => [nome, fmtNum(val)+' Kz', (totalPag?(val/totalPag*100).toFixed(1)+'%':'0%')]),
+      styles:{fontSize:8,cellPadding:2}, headStyles:{fillColor:[88,80,236],textColor:255},
+      alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:W/2+10}, tableWidth:80,
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  const porForma = {};
+  pags.filter(p => p.estado === 'Confirmado').forEach(p => { porForma[p.formaPagamento] = (porForma[p.formaPagamento]||0) + p.valor; });
+  const formaArr = Object.entries(porForma).sort((a,b) => b[1]-a[1]);
+  if(formaArr.length){
+    doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Por Forma de Pagamento', MR+100, 34);
+    doc.autoTable({
+      startY:40, head:[['Forma','Total','%']], body:formaArr.map(([forma,val]) => [forma, fmtNum(val)+' Kz', (totalPag?(val/totalPag*100).toFixed(1)+'%':'0%')]),
+      styles:{fontSize:8,cellPadding:2}, headStyles:{fillColor:[88,80,236],textColor:255},
+      alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR+100,right:MR}, tableWidth:90,
+    });
+  }
+
+  y = Math.max(y, doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 50);
+  doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Detalhe de Pagamentos', MR, y); y += 4;
+  const pagRows = pags.map(p => [fmtDatePt(p.dataPagamento), p.escolaNome||'-', p.faturaNumero||'-', p.formaPagamento, p.metodoPagamento, fmtNum(p.valor)+' Kz', p.estado]);
+  doc.autoTable({
+    startY:y, head:[['Data','Escola','Fatura','Frequência','Método','Valor','Estado']], body:pagRows,
+    styles:{fontSize:8,cellPadding:3}, headStyles:{fillColor:[88,80,236],textColor:255},
+    alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:MR},
+  });
+
+  y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 20;
+  doc.setTextColor(0); doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text('Detalhe de Faturas', MR, y); y += 4;
+  const fatRows = fats.map(f => [f.numero, f.escolaNome||'-', f.descricao||'-', fmtDatePt(f.dataEmissao), f.dataVencimento?fmtDatePt(f.dataVencimento):'-', fmtNum(f.valorTotal)+' Kz', f.estado]);
+  doc.autoTable({
+    startY:y, head:[['Nº','Escola','Descrição','Emissão','Vencimento','Valor','Estado']], body:fatRows,
+    styles:{fontSize:8,cellPadding:3}, headStyles:{fillColor:[88,80,236],textColor:255},
+    alternateRowStyles:{fillColor:[248,249,253]}, margin:{left:MR,right:MR},
+  });
+
+  doc.save('Direcao_Faturas_Pagamentos_' + fmtDatePt(iso(new Date())).replace(/\//g,'-') + '.pdf');
+}
+
+/* =========================================================================
    GLOBAL REFRESH
 ========================================================================= */
 function refreshAll(){
@@ -6272,6 +7034,7 @@ function refreshAll(){
   if(document.getElementById('view-reunioes').classList.contains('active')) safe(renderReunioes, 'renderReunioes');
   if(document.getElementById('view-acessos').classList.contains('active')) safe(renderAcessos, 'renderAcessos');
   if(document.getElementById('view-gastos').classList.contains('active')) safe(renderGastos, 'renderGastos');
+  if(document.getElementById('view-direcao').classList.contains('active')) safe(renderDirecao, 'renderDirecao');
 }
 initGlobalSearchSelects();
 loadAllData().then(()=> refreshAll()).catch(err=> { console.error('Failed to load data:', err); refreshAll(); });

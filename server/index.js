@@ -64,6 +64,8 @@ app.use('/api/ocorrencias', require('./routes/ocorrencias'));
 app.use('/api/gastos-logistica', require('./routes/gastos_logistica'));
 app.use('/api/saldo-logistica', require('./routes/saldo_logistica'));
 app.use('/api/acessos', require('./routes/acessos'));
+app.use('/api/faturas', require('./routes/faturas'));
+app.use('/api/pagamentos', require('./routes/pagamentos'));
 
 // Conflict check endpoint
 app.use('/api/conflictos', require('./routes/conflictos'));

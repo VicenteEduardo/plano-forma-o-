@@ -281,6 +281,43 @@ async function initSchema() {
       `);
     } catch (_) {}
 
+    await db.execute(`CREATE TABLE IF NOT EXISTS faturas (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      escola_id INT NOT NULL,
+      numero VARCHAR(50) NOT NULL,
+      descricao TEXT,
+      valor_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+      data_emissao VARCHAR(10) NOT NULL,
+      data_vencimento VARCHAR(10) NOT NULL DEFAULT '',
+      estado VARCHAR(30) NOT NULL DEFAULT 'Pendente',
+      observacoes TEXT,
+      criado_em VARCHAR(10) NOT NULL,
+      atualizado_em VARCHAR(10) NOT NULL,
+      INDEX idx_fat_escola (escola_id),
+      INDEX idx_fat_estado (estado),
+      INDEX idx_fat_data (data_emissao)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    await db.execute(`CREATE TABLE IF NOT EXISTS pagamentos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      fatura_id INT,
+      escola_id INT NOT NULL,
+      valor DECIMAL(12,2) NOT NULL DEFAULT 0,
+      data_pagamento VARCHAR(10) NOT NULL,
+      forma_pagamento VARCHAR(30) NOT NULL DEFAULT 'Mensal',
+      metodo_pagamento VARCHAR(50) NOT NULL DEFAULT 'Transferência',
+      referencia VARCHAR(255) NOT NULL DEFAULT '',
+      estado VARCHAR(30) NOT NULL DEFAULT 'Confirmado',
+      observacoes TEXT,
+      criado_em VARCHAR(10) NOT NULL,
+      atualizado_em VARCHAR(10) NOT NULL,
+      INDEX idx_pag_fatura (fatura_id),
+      INDEX idx_pag_escola (escola_id),
+      INDEX idx_pag_estado (estado),
+      INDEX idx_pag_data (data_pagamento),
+      INDEX idx_pag_forma (forma_pagamento)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
     console.log('MySQL schema initialized successfully');
   } finally {
     db.release();
