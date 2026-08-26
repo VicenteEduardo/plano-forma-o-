@@ -4,7 +4,7 @@ const { sendMail, notifyEmails, escHtml } = require('../mailer');
 
 const DIAS_ABERTA = 3;
 const DIAS_ANALISE = 5;
-const CRON_EXPR = '0 9 * * *';
+const CRON_EXPR = '0 8 * * *';
 
 function daysSince(dateStr) {
   if (!dateStr) return 0;
@@ -150,7 +150,7 @@ function startOcorrenciasAlertas() {
     console.log('[cron] A verificar ocorrências pendentes...');
     verificarOcorrenciasPendentes();
   });
-  console.log('[cron] Alertas de ocorrências pendentes agendados (diário 09:00).');
+  console.log('[cron] Alertas de ocorrências pendentes agendados (diário 08:00).');
 }
 
 module.exports = { startOcorrenciasAlertas, verificarOcorrenciasPendentes };
