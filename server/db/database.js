@@ -217,6 +217,17 @@ async function initSchema() {
     } catch (_) {}
     try { await db.execute('ALTER TABLE ocorrencias DROP COLUMN comentario'); } catch (_) {}
     try { await db.execute('ALTER TABLE ocorrencias DROP COLUMN comentario_tecnico_id'); } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN codigo VARCHAR(20) AFTER id'); } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN tipo VARCHAR(20) NOT NULL DEFAULT \'Erro\' AFTER titulo'); } catch (_) {}
+    try { await db.execute('CREATE UNIQUE INDEX idx_ocor_codigo ON ocorrencias(codigo)'); } catch (_) {}
+    try { await db.execute('ALTER TABLE ocorrencias ADD COLUMN alertado_em VARCHAR(10) NULL AFTER atualizado_em'); } catch (_) {}
+    try {
+      const [rows] = await db.execute('SELECT id FROM ocorrencias WHERE codigo IS NULL OR codigo = \'\' ORDER BY id ASC');
+      for (const row of rows) {
+        const padded = String(row.id).padStart(4, '0');
+        await db.execute('UPDATE ocorrencias SET codigo=? WHERE id=?', ['OCR-' + padded, row.id]);
+      }
+    } catch (_) {}
 
     await db.execute(`CREATE TABLE IF NOT EXISTS ocorrencia_fotos (
       id INT AUTO_INCREMENT PRIMARY KEY,

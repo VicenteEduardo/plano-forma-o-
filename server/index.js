@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const { initSchema } = require('./db/database');
 const { sendMail, notifyEmails, mailConfig } = require('./mailer');
+const { startOcorrenciasAlertas, verificarOcorrenciasPendentes } = require('./cron/ocorrencias-alertas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +34,14 @@ app.post('/api/test-email', async (req, res, next) => {
         notifyEmails: notifyEmails.length,
       },
     });
+  } catch (err) { next(err); }
+});
+
+// Manual trigger: check and send alerts for old occurrences
+app.post('/api/alertar-ocorrencias', async (req, res, next) => {
+  try {
+    await verificarOcorrenciasPendentes();
+    res.json({ ok: true, message: 'Verificação de ocorrências pendentes executada.' });
   } catch (err) { next(err); }
 });
 
@@ -88,6 +97,7 @@ async function start() {
   try {
     await initSchema();
     console.log('Database schema initialized');
+    startOcorrenciasAlertas();
   } catch (err) {
     console.error('Database init failed (server still running):', err.message);
   }

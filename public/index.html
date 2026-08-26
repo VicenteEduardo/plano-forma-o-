@@ -733,9 +733,15 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
                   <select class="form-select form-select-sm" id="ocorFilterEscola" style="width:auto;">
                     <option value="todos">Todas as escolas</option>
                   </select>
+                  <select class="form-select form-select-sm" id="ocorFilterTipo" style="width:auto;">
+                    <option value="todos">Todos os tipos</option>
+                    <option>Erro</option><option>Bug</option><option>Sugestão</option><option>Melhoria</option><option>Reclamação</option><option>Manutenção</option><option>Outro</option>
+                  </select>
+                  <input type="text" class="form-control form-control-sm" id="ocorSearchCodigo" placeholder="Pesquisar código..." style="width:140px;">
                   <button class="btn btn-danger btn-sm" onclick="openOcorrenciaModal()"><i class="bi bi-plus-lg me-1"></i>Nova ocorrência</button>
                   <button class="btn btn-outline-danger btn-sm" onclick="pdfOcorrencias()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
                   <button class="btn btn-outline-secondary btn-sm" onclick="testarEmailNotificacoes()" title="Envia um email de teste para os destinatários das notificações"><i class="bi bi-envelope-check me-1"></i>Testar email</button>
+                  <button class="btn btn-outline-warning btn-sm" onclick="testarAlertasOcorrencias()" title="Verifica e envia alertas de ocorrências pendentes há mais de 3 dias"><i class="bi bi-bell me-1"></i>Testar alertas</button>
                 </div>
               </div>
               <div id="listaOcorrencias"></div>
@@ -1570,11 +1576,17 @@ h1,h2,h3,h4,h5,h6,.font-display{font-family:'Manrope',sans-serif;}
         <form id="ocorForm">
           <input type="hidden" id="ocorId">
           <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
               <label class="form-label">Título da ocorrência</label>
               <input type="text" class="form-control" id="ocorTitulo" required placeholder="Ex: Impressora não liga na Escola Viana">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" id="ocorTipo">
+                <option>Erro</option><option>Bug</option><option>Sugestão</option><option>Melhoria</option><option>Reclamação</option><option>Manutenção</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="col-md-3">
               <label class="form-label">Escola / Cliente</label>
               <div class="ss-control" id="ssWrapOcorEscola">
                 <input type="hidden" id="ocorEscolaId">
@@ -4320,6 +4332,7 @@ function openOcorrenciaModal(id){
       else descEl.textContent = d;
       document.getElementById('ocorTecnico').value = o.tecnicoId||'';
       document.getElementById('ocorEvento').value = o.eventoId||'';
+      document.getElementById('ocorTipo').value = o.tipo || 'Erro';
       document.getElementById('ocorPrioridade').value = o.prioridade;
       document.getElementById('ocorGravidade').value = o.gravidade;
       document.getElementById('ocorEstado').value = o.estado;
@@ -4365,6 +4378,7 @@ function resetOcorForm(){
   document.getElementById('ocorPrioridade').value = 'Média';
   document.getElementById('ocorGravidade').value = 'Moderada';
   document.getElementById('ocorEstado').value = 'Aberta';
+  document.getElementById('ocorTipo').value = 'Erro';
   document.getElementById('ocorFotoInput').value = '';
   document.getElementById('ocorVideoInput').value = '';
   document.getElementById('ocorDescricao').innerHTML = '';
@@ -4481,6 +4495,7 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
     if(!descricao){ showToast('A descrição do problema é obrigatória.','warning'); return; }
     const payload = {
       titulo,
+      tipo: document.getElementById('ocorTipo').value,
       escolaId: document.getElementById('ocorEscolaId').value ? Number(document.getElementById('ocorEscolaId').value) : null,
       descricao: descricaoHtml,
       tecnicoId: document.getElementById('ocorTecnico').value ? Number(document.getElementById('ocorTecnico').value) : null,
@@ -4498,7 +4513,7 @@ document.getElementById('ocorSaveBtn').addEventListener('click', async ()=>{
       delete ocorMediaCache[editingOcorId];
       const o = OCORRENCIAS.find(x=>x.id===editingOcorId);
       if(o){
-        Object.assign(o, { titulo: payload.titulo, escolaId: payload.escolaId, descricao: payload.descricao, tecnicoId: payload.tecnicoId, eventoId: payload.eventoId, prioridade: payload.prioridade, gravidade: payload.gravidade, estado: payload.estado, resolucao: payload.resolucao });
+        Object.assign(o, { titulo: payload.titulo, tipo: payload.tipo, escolaId: payload.escolaId, descricao: payload.descricao, tecnicoId: payload.tecnicoId, eventoId: payload.eventoId, prioridade: payload.prioridade, gravidade: payload.gravidade, estado: payload.estado, resolucao: payload.resolucao });
         if(payload.fotos && payload.fotos.length) o.fotosCount = (o.fotosCount||0) + payload.fotos.length;
         if(payload.video) o.hasVideo = true;
       }
@@ -4528,14 +4543,17 @@ document.getElementById('ocorDeleteBtn').addEventListener('click', async ()=>{
 });
 document.getElementById('ocorrenciaModal').addEventListener('hidden.bs.modal', resetOcorForm);
 
-['ocorFilterEstado','ocorFilterPrioridade'].forEach(id=>{
+['ocorFilterEstado','ocorFilterPrioridade','ocorFilterTipo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderOcorrencias);
 });
+document.getElementById('ocorSearchCodigo').addEventListener('input', renderOcorrencias);
 
 function renderOcorrencias(){
   const fEstado = document.getElementById('ocorFilterEstado').value;
   const fPrio = document.getElementById('ocorFilterPrioridade').value;
   const fEsc = document.getElementById('ocorFilterEscola').value;
+  const fTipo = document.getElementById('ocorFilterTipo').value;
+  const fCodigo = document.getElementById('ocorSearchCodigo').value.trim().toLowerCase();
 
   const selEsc = document.getElementById('ocorFilterEscola');
   const usedEscolaIds = [...new Set(OCORRENCIAS.filter(o=>o.escolaId).map(o=>o.escolaId))];
@@ -4550,7 +4568,9 @@ function renderOcorrencias(){
   let list = OCORRENCIAS.filter(o=>
     (fEstado==='todos' || o.estado===fEstado) &&
     (fPrio==='todos' || o.prioridade===fPrio) &&
-    (fEsc==='todos' || Number(o.escolaId)===Number(fEsc))
+    (fEsc==='todos' || Number(o.escolaId)===Number(fEsc)) &&
+    (fTipo==='todos' || o.tipo===fTipo) &&
+    (!fCodigo || (o.codigo && o.codigo.toLowerCase().includes(fCodigo)))
   );
   const estadoPeso = {'Aberta':0,'Em análise':1,'Resolvida':2,'Cancelada':3};
   list.sort((a,b)=>{
@@ -4585,11 +4605,15 @@ function renderOcorrencias(){
         ${media}
         <div class="flex-grow-1" style="min-width:0;">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="fw-bold" style="font-size:14px;">${o.titulo}</div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              ${o.codigo? `<span style="font-size:11px;font-weight:700;color:var(--brand,#453FCB);background:var(--brand-100,#ede9fe);padding:2px 8px;border-radius:6px;">${o.codigo}</span>` : ''}
+              <div class="fw-bold" style="font-size:14px;">${o.titulo}</div>
+            </div>
             <div style="font-size:11px; color:var(--ink-500);">Atualizado em ${fmtDatePt(o.atualizadoEm)}</div>
           </div>
           <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
             ${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}
+            ${o.tipo? `<span class="chip chip-info"><i class="bi bi-tag"></i>${o.tipo}</span>` : ''}
             ${o.hasVideo? `<span class="chip chip-info"><i class="bi bi-camera-video"></i>Vídeo anexado</span>`:''}
             ${o.fotosCount > 0? `<span class="chip chip-info"><i class="bi bi-images"></i>${o.fotosCount} foto${o.fotosCount!==1?'s':''}</span>`:''}
             ${o.comentariosCount > 0? `<span class="chip chip-info" style="cursor:pointer;" onclick="openOcorViewer(${o.id})"><i class="bi bi-chat-left-text me-1"></i>${o.comentariosCount} comentário${o.comentariosCount!==1?'s':''}</span>`:''}
@@ -4679,10 +4703,13 @@ async function openOcorViewer(ocorId){
   const video = media.video || null;
   let html = '';
   html += `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
-    <div class="fw-bold" style="font-size:16px;">${o.titulo}</div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      ${o.codigo? `<span style="font-size:12px;font-weight:700;color:var(--brand,#453FCB);background:var(--brand-100,#ede9fe);padding:3px 10px;border-radius:6px;">${o.codigo}</span>` : ''}
+      <div class="fw-bold" style="font-size:16px;">${o.titulo}</div>
+    </div>
     <div style="font-size:11px; color:var(--ink-500);">Criada em ${fmtDatePt(o.criadoEm)} · Atualizada em ${fmtDatePt(o.atualizadoEm)}</div>
   </div>`;
-  html += `<div class="d-flex align-items-center flex-wrap gap-2 mb-2">${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)}</div>`;
+  html += `<div class="d-flex align-items-center flex-wrap gap-2 mb-2">${ocorEstadoChip(o.estado)} ${ocorPrioridadeChip(o.prioridade)} ${ocorGravidadeChip(o.gravidade)} ${o.tipo? `<span class="chip chip-info"><i class="bi bi-tag"></i>${o.tipo}</span>` : ''}</div>`;
   html += `<div class="mb-3">
     <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink-700);"><i class="bi bi-file-earmark-text me-1"></i>Descrição</div>
     <div style="background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14.5px; line-height:1.75; color:var(--ink-900); overflow-wrap:break-word;">${formatOcorDescricao(o.descricao)}</div>
@@ -4801,6 +4828,17 @@ async function testarEmailNotificacoes(){
     else showToast('Falha no envio de email: '+(r.error||'ver logs do servidor'), 'error');
   }catch(e){ console.error('Erro ao testar email:', e); showToast('Erro ao testar email: '+e.message,'error'); }
   finally{ if(btn){ btn.disabled = false; btn.innerHTML = '<i class="bi bi-envelope-check me-1"></i>Testar email'; } }
+}
+
+async function testarAlertasOcorrencias(){
+  const btn = document.querySelector('button[onclick="testarAlertasOcorrencias()"]');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A verificar...'; }
+  try{
+    const r = await apiPost('/alertar-ocorrencias', {});
+    if(r.ok) showToast('Alertas de ocorrências pendentes verificados e enviados.', 'success');
+    else showToast('Falha ao verificar alertas: '+(r.error||'ver logs do servidor'), 'error');
+  }catch(e){ console.error('Erro ao verificar alertas:', e); showToast('Erro ao verificar alertas: '+e.message,'error'); }
+  finally{ if(btn){ btn.disabled = false; btn.innerHTML = '<i class="bi bi-bell me-1"></i>Testar alertas'; } }
 }
 
 document.getElementById('ocorViewerEditBtn').addEventListener('click', ()=>{
@@ -5154,14 +5192,33 @@ function pdfAusencias(){
 
 function pdfOcorrencias(){
   const p = _pdfBase();
-  p.drawHeader('Relatório de Ocorrências', 'Todas as ocorrências registadas');
-  const rows = OCORRENCIAS.sort((a,b)=>(b.atualizadoEm||'').localeCompare(a.atualizadoEm||''));
+  const fEstado = document.getElementById('ocorFilterEstado').value;
+  const fPrio = document.getElementById('ocorFilterPrioridade').value;
+  const fEsc = document.getElementById('ocorFilterEscola').value;
+  const fTipo = document.getElementById('ocorFilterTipo').value;
+  const fCodigo = document.getElementById('ocorSearchCodigo').value.trim().toLowerCase();
+  let rows = OCORRENCIAS.filter(o=>
+    (fEstado==='todos' || o.estado===fEstado) &&
+    (fPrio==='todos' || o.prioridade===fPrio) &&
+    (fEsc==='todos' || Number(o.escolaId)===Number(fEsc)) &&
+    (fTipo==='todos' || o.tipo===fTipo) &&
+    (!fCodigo || (o.codigo && o.codigo.toLowerCase().includes(fCodigo)))
+  );
+  const activeFilters = [];
+  if(fEstado!=='todos') activeFilters.push('Estado: '+fEstado);
+  if(fPrio!=='todos') activeFilters.push('Prioridade: '+fPrio);
+  if(fEsc!=='todos'){ const esc = escolaById(fEsc); if(esc) activeFilters.push('Escola: '+esc.nome); }
+  if(fTipo!=='todos') activeFilters.push('Tipo: '+fTipo);
+  if(fCodigo) activeFilters.push('Código: '+fCodigo);
+  const subtitle = activeFilters.length ? activeFilters.join(' | ') : 'Todas as ocorrências registadas';
+  p.drawHeader('Relatório de Ocorrências', subtitle);
+  rows.sort((a,b)=>(b.atualizadoEm||'').localeCompare(a.atualizadoEm||''));
   const body = rows.map(o=>{
     const t = o.tecnicoId ? techById(o.tecnicoId) : null;
     const esc = o.escolaId ? escolaById(o.escolaId) : null;
-    return [fmtDatePt(o.criadoEm), o.titulo, t?t.nome:'—', esc?esc.nome:'—', o.prioridade, o.estado];
+    return [o.codigo||'—', fmtDatePt(o.criadoEm), o.titulo, o.tipo||'—', t?t.nome:'—', esc?esc.nome:'—', o.prioridade, o.estado];
   });
-  p.autoTableHead([['Data','Título','Técnico','Escola','Prioridade','Estado']], body, 70);
+  p.autoTableHead([['Código','Data','Título','Tipo','Técnico','Escola','Prioridade','Estado']], body, 70);
   p.doc.save('Ocorrencias_'+fmtDatePt(iso(today)).replace(/\//g,'-')+'.pdf');
 }
 

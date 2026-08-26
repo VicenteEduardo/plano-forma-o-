@@ -8,7 +8,7 @@ const { notifyOcorrencia } = require('../mailer');
 
 async function ocorrenciaInfo(ocorId) {
   return queryOne(
-    `SELECT o.titulo, o.descricao, o.estado, o.prioridade, o.gravidade, o.escola_id, o.tecnico_id,
+    `SELECT o.codigo, o.titulo, o.tipo, o.descricao, o.estado, o.prioridade, o.gravidade, o.escola_id, o.tecnico_id,
             t.nome AS tecnico_nome, t.email AS tecnico_email, e.nome AS escola_nome
      FROM ocorrencias o
      LEFT JOIN tecnicos t ON t.id = o.tecnico_id
@@ -21,7 +21,7 @@ function notifyOcor(acao, ocorId, extra) {
     if (!row) return;
     const to = row.tecnico_email ? [row.tecnico_email] : [];
     notifyOcorrencia({
-      acao, titulo: row.titulo, descricao: row.descricao, estado: row.estado,
+      acao, codigo: row.codigo, titulo: row.titulo, tipo: row.tipo, descricao: row.descricao, estado: row.estado,
       prioridade: row.prioridade, gravidade: row.gravidade,
       escola: row.escola_nome, tecnico: row.tecnico_nome,
       comentario: extra ? extra.comentario : null, to,
@@ -49,7 +49,7 @@ function nowStr() {
 
 function mapOcor(r) {
   return {
-    id: r.id, titulo: r.titulo, escolaId: r.escola_id, descricao: r.descricao,
+    id: r.id, codigo: r.codigo, titulo: r.titulo, tipo: r.tipo, escolaId: r.escola_id, descricao: r.descricao,
     tecnicoId: r.tecnico_id, eventoId: r.evento_id, prioridade: r.prioridade,
     gravidade: r.gravidade, estado: r.estado, resolucao: r.resolucao,
     criadoEm: r.criado_em, atualizadoEm: r.atualizado_em,
@@ -188,9 +188,12 @@ router.post('/', async (req, res, next) => {
     const now = new Date().toISOString().slice(0,10);
     if (!b.titulo || !b.descricao) return res.status(400).json({ error: 'titulo e descricao são obrigatórios' });
     const pool = getPool();
+    const [maxRow] = await pool.query('SELECT id FROM ocorrencias ORDER BY id DESC LIMIT 1');
+    const nextNum = maxRow.length ? maxRow[0].id + 1 : 1;
+    const codigo = 'OCR-' + String(nextNum).padStart(4, '0');
     const [info] = await pool.query(
-      'INSERT INTO ocorrencias (titulo, escola_id, descricao, tecnico_id, evento_id, prioridade, gravidade, estado, resolucao, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      [b.titulo, b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
+      'INSERT INTO ocorrencias (codigo, titulo, tipo, escola_id, descricao, tecnico_id, evento_id, prioridade, gravidade, estado, resolucao, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [codigo, b.titulo, b.tipo||'Erro', b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
        b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'', now, now]
     );
     const ocorId = info.insertId;
@@ -206,7 +209,7 @@ router.post('/', async (req, res, next) => {
       await pool.query('INSERT INTO ocorrencia_comentarios (ocorrencia_id, comentario, tecnico_id, criado_em) VALUES (?,?,?,?)',
         [ocorId, b.comentario.trim(), b.comentarioTecnicoId || null, nowStr()]);
     }
-    res.json({ id: ocorId, titulo: b.titulo, escolaId: b.escolaId, descricao: b.descricao,
+    res.json({ id: ocorId, codigo, titulo: b.titulo, tipo: b.tipo||'Erro', escolaId: b.escolaId, descricao: b.descricao,
       tecnicoId: b.tecnicoId, eventoId: b.eventoId, prioridade: b.prioridade, gravidade: b.gravidade,
       estado: b.estado, resolucao: b.resolucao, comentariosCount: b.comentario ? 1 : 0,
       criadoEm: now, atualizadoEm: now });
@@ -220,8 +223,8 @@ router.put('/:id', async (req, res, next) => {
     const now = new Date().toISOString().slice(0,10);
     const pool = getPool();
     await pool.query(
-      'UPDATE ocorrencias SET titulo=?, escola_id=?, descricao=?, tecnico_id=?, evento_id=?, prioridade=?, gravidade=?, estado=?, resolucao=?, atualizado_em=? WHERE id=?',
-      [b.titulo, b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
+      'UPDATE ocorrencias SET titulo=?, tipo=?, escola_id=?, descricao=?, tecnico_id=?, evento_id=?, prioridade=?, gravidade=?, estado=?, resolucao=?, atualizado_em=? WHERE id=?',
+      [b.titulo, b.tipo||'Erro', b.escolaId||null, b.descricao, b.tecnicoId||null, b.eventoId||null,
        b.prioridade||'Média', b.gravidade||'Moderada', b.estado||'Aberta', b.resolucao||'', now, req.params.id]
     );
     if ((b.comentario || '').trim()) {
