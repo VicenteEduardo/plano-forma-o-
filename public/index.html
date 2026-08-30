@@ -4543,7 +4543,7 @@ document.getElementById('ocorDeleteBtn').addEventListener('click', async ()=>{
 });
 document.getElementById('ocorrenciaModal').addEventListener('hidden.bs.modal', resetOcorForm);
 
-['ocorFilterEstado','ocorFilterPrioridade','ocorFilterTipo'].forEach(id=>{
+['ocorFilterEstado','ocorFilterPrioridade','ocorFilterEscola','ocorFilterTipo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderOcorrencias);
 });
 document.getElementById('ocorSearchCodigo').addEventListener('input', renderOcorrencias);
